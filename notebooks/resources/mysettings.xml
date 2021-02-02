@@ -1,0 +1,30 @@
+<settings>
+  <profiles>
+       <profile>
+           <repositories>
+               <repository>
+                   <snapshots>
+                       <enabled>false</enabled>
+                   </snapshots>
+                   <id>bintray-dptinfoutln-public</id>
+                   <name>bintray</name>
+                   <url>https://dl.bintray.com/dptinfoutln/public</url>
+               </repository>
+           </repositories>
+           <pluginRepositories>
+               <pluginRepository>
+                   <snapshots>
+                       <enabled>false</enabled>
+                   </snapshots>
+                   <id>bintray-dptinfoutln-public</id>
+                   <name>bintray-plugins</name>
+                   <url>https://dl.bintray.com/dptinfoutln/public</url>
+               </pluginRepository>
+           </pluginRepositories>
+           <id>bintray</id>
+       </profile>
+   </profiles>
+   <activeProfiles>
+       <activeProfile>bintray</activeProfile>
+   </activeProfiles>
+</settings>
