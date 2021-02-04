@@ -1,3 +1,4 @@
+```shell
 docker run \
 	--name jupyterjava \
 	--rm \
@@ -9,3 +10,4 @@ docker run \
        	--env SUDO_PASSWORD=secret \
         --volume ~/.m2:/home/user/.m2 \
 	brunoe/javanotebook-jaxrs:develop
+```
