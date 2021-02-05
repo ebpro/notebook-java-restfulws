@@ -9,7 +9,8 @@ ENV HOME /home/${NB_USER}
 RUN adduser -D \
     -g "Default user" \
     -u ${NB_UID} \
-    -s /bin/zsh 
+    -s /bin/zsh \
+    ${NB_USER}
 
 # USER root
 RUN cp -r /home/user/. /home/${NB_USER}
