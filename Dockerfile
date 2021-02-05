@@ -8,8 +8,6 @@ USER root
 COPY notebooks /notebooks
 RUN usermod -o -u "${NB_UID}" user && \
 	adduser user codeserver && \
-	adduser user sdk && \
-
 	mkdir /src && \
  	chown -R ${NB_UID} ${HOME} && \
 	chown -R ${NB_UID} /notebooks && \
