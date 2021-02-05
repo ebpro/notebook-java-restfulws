@@ -12,9 +12,12 @@ RUN adduser -D \
     -s /bin/zsh \
     ${NB_USER}
 
+COPY notebooks /
+
 # USER root
-RUN cp -r /home/user/. /home/${NB_USER}
-RUN chown -R ${NB_UID} ${HOME} && \
+RUN cp -r /home/user/. /home/${NB_USER} && \
+	mkdir /src /codeserver && \
+ 	chown -R ${NB_UID} ${HOME} && \
 	chown -R ${NB_UID} /notebooks && \
 	chown -R ${NB_UID} /src && \
 	chown -R ${NB_UID} /opt/sdkman && \
@@ -28,5 +31,4 @@ RUN echo "conda activate base" >> $HOME/.zshrc && \
 USER ${NB_USER}
 RUN 
 
-COPY notebooks /
 ENTRYPOINT []
