@@ -11,11 +11,11 @@ RUN adduser --disabled-password \
     --uid ${NB_UID} \
     --shell /bin/zsh \
     ${NB_USER} && \
-	ln -sf .zlogin /home/jovyan/.zprezto/runcoms/zlogin /home/jovyan/.zlogin && \
-	ln -sf .zlogout /home/jovyan/.zprezto/runcoms/zlogout /home/jovyan/.zlogout && \
-	ln -sf .zprofile /home/jovyan/.zprezto/runcoms/zprofile /home/jovyan/.zprofile && \
-	ln -sf .zshenv /home/jovyan/.zprezto/runcoms/zshenv /home/jovyan/.zshenv && \
-	ln -sf .zshrc /home/jovyan/.zprezto/runcoms/zshrc /home/jovyan/.zshrc 
+	ln -sf /home/jovyan/.zprezto/runcoms/zlogin /home/jovyan/.zlogin && \
+	ln -sf /home/jovyan/.zprezto/runcoms/zlogout /home/jovyan/.zlogout && \
+	ln -sf /home/jovyan/.zprezto/runcoms/zprofile /home/jovyan/.zprofile && \
+	ln -sf /home/jovyan/.zprezto/runcoms/zshenv /home/jovyan/.zshenv && \
+	ln -sf /home/jovyan/.zprezto/runcoms/zshrc /home/jovyan/.zshrc 
 
 COPY . ${HOME}
 USER root
