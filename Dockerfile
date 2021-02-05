@@ -16,7 +16,7 @@ COPY notebooks /
 
 # USER root
 RUN cp -r /home/user/. /home/${NB_USER} && \
-	mkdir /src /codeserver && \
+	mkdir /src && \
  	chown -R ${NB_UID} ${HOME} && \
 	chown -R ${NB_UID} /notebooks && \
 	chown -R ${NB_UID} /src && \
