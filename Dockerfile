@@ -29,6 +29,5 @@ RUN echo "conda activate base" >> $HOME/.zshrc && \
         echo "[[ ! -f /opt/sdkman/bin/sdkman-init.sh ]] || source /opt/sdkman/bin/sdkman-init.sh" >> $HOME/.zshrc
 
 USER ${NB_USER}
-RUN 
 
 ENTRYPOINT []
