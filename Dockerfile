@@ -7,11 +7,15 @@ ENV HOME /home/${NB_USER}
 USER root
 COPY notebooks /notebooks
 RUN usermod -o -u "${NB_UID}" user && \
+	adduser user codeserver && \
+	adduser user sdk && \
+
 	mkdir /src && \
  	chown -R ${NB_UID} ${HOME} && \
 	chown -R ${NB_UID} /notebooks && \
 	chown -R ${NB_UID} /src && \
 	chown -R ${NB_UID} /opt/sdkman && \
+	chown -R ${NB_UID} /opt/conda && \
 	chown -R ${NB_UID} /codeserver 
 
 WORKDIR /notebooks
