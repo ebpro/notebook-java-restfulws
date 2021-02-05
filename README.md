@@ -1,3 +1,9 @@
+# JAX-RS Notebook
+
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/ebpro/javanotebook-jaxrs/feature/experimentali?url=lab)
+
+## Usage
+
 docker run \
 	--name jupyterjava \
 	--rm \
