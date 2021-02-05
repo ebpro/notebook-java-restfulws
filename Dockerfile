@@ -10,18 +10,17 @@ RUN adduser --disabled-password \
     --gecos "Default user" \
     --uid ${NB_UID} \
     --shell /bin/zsh \
-    ${NB_USER} && \
-	ln -sf /home/jovyan/.zprezto/runcoms/zlogin /home/jovyan/.zlogin && \
-	ln -sf /home/jovyan/.zprezto/runcoms/zlogout /home/jovyan/.zlogout && \
-	ln -sf /home/jovyan/.zprezto/runcoms/zprofile /home/jovyan/.zprofile && \
-	ln -sf /home/jovyan/.zprezto/runcoms/zshenv /home/jovyan/.zshenv && \
-	ln -sf /home/jovyan/.zprezto/runcoms/zshrc /home/jovyan/.zshrc 
 
-COPY . ${HOME}
-USER root
+# USER root
 RUN cp -r /home/user/. /home/${NB_USER}
-RUN chown -R ${NB_UID} ${HOME}
+RUN chown -R ${NB_UID} ${HOME} && \
+	chown -R ${NB_UID} /notebook && \
+	chown -R ${NB_UID} /src && \
+	chown -R ${NB_UID} /opt/sdkman && \
+	chown -R ${NB_UID} /codeserver 
+
 USER ${NB_USER}
+RUN 
 
 COPY notebooks /
 ENTRYPOINT []
