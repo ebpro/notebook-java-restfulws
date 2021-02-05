@@ -14,13 +14,11 @@ RUN	mkdir /src && \
 	chown -R ${NB_UID} /opt/sdkman && \
 	chown -R ${NB_UID} /codeserver 
 
-RUN echo "conda activate base" >> $HOME/.zshrc && \
-        echo "[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh" >> $HOME/.zshrc && \
-        echo "export SDKMAN_DIR=/opt/sdkman" >> $HOME/.zshrc && \
-        echo "[[ ! -f /opt/sdkman/bin/sdkman-init.sh ]] || source /opt/sdkman/bin/sdkman-init.sh" >> $HOME/.zshrc
+COPY notebooks /
+
+RUN usermod -o -u "${NB_UID}" user i
 
 USER ${NB_USER}
 
-COPY notebooks /
 
 ENTRYPOINT []
