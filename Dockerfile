@@ -9,7 +9,7 @@ ENV HOME /home/${NB_USER}
 RUN adduser --disabled-password \
     --gecos "Default user" \
     --uid ${NB_UID} \
-    --shell /bin/zsh \
+    --shell /bin/zsh 
 
 # USER root
 RUN cp -r /home/user/. /home/${NB_USER}
