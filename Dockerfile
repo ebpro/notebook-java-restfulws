@@ -5,7 +5,7 @@ ENV NB_UID 1000
 ENV HOME /home/${NB_USER}
 
 USER root
-COPY . ${HOME}
+COPY notebooks /notebooks
 RUN usermod -o -u "${NB_UID}" user && \
 	mkdir /src && \
  	chown -R ${NB_UID} ${HOME} && \
@@ -14,8 +14,8 @@ RUN usermod -o -u "${NB_UID}" user && \
 	chown -R ${NB_UID} /opt/sdkman && \
 	chown -R ${NB_UID} /codeserver 
 
-WORKDIR ${HOME}
+WORKDIR /notebooks
 
 USER ${NB_USER}
-
+SHELL ["/bin/zsh","-l","-c"]
 ENTRYPOINT []
