@@ -17,5 +17,5 @@ RUN usermod -o -u "${NB_UID}" user && \
 WORKDIR /notebooks
 
 USER ${NB_USER}
-SHELL ["/bin/zsh","-l","-c"]
-ENTRYPOINT []
+SHELL ["/bin/zsh","--interactive","-c"]
+ENTRYPOINT ["/bin/zsh","--interactive","-c"]
