@@ -1,24 +1,21 @@
 FROM brunoe/jupyterjava:feature_experimental
 
-ARG NB_USER=user
-ARG NB_UID=1000
-ENV USER user 
-ENV NB_UID ${NB_UID}
-ENV HOME /home/${USER}
+ENV NB_USER user 
+ENV NB_UID 1000
+ENV HOME /home/${NB_USER}
 
 USER root
-RUN	mkdir /src && \
+COPY . ${HOME}
+RUN usermod -o -u "${NB_UID}" user && \
+	mkdir /src && \
  	chown -R ${NB_UID} ${HOME} && \
 	chown -R ${NB_UID} /notebooks && \
 	chown -R ${NB_UID} /src && \
 	chown -R ${NB_UID} /opt/sdkman && \
 	chown -R ${NB_UID} /codeserver 
 
-COPY notebooks /
-
-RUN usermod -o -u "${NB_UID}" user 
+WORKDIR ${HOME}
 
 USER ${NB_USER}
-
 
 ENTRYPOINT []
