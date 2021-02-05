@@ -2,7 +2,7 @@ FROM brunoe/jupyterjava:feature_experimental
 
 ARG NB_USER=user
 ARG NB_UID=1000
-ENV USER ${NB_USER}
+ENV USER user 
 ENV NB_UID ${NB_UID}
 ENV HOME /home/${NB_USER}
 
