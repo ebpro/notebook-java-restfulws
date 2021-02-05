@@ -4,7 +4,7 @@ ARG NB_USER=user
 ARG NB_UID=1000
 ENV USER user 
 ENV NB_UID ${NB_UID}
-ENV HOME /home/${NB_USER}
+ENV HOME /home/${USER}
 
 USER root
 RUN	mkdir /src && \
