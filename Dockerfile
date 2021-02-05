@@ -16,7 +16,7 @@ RUN	mkdir /src && \
 
 COPY notebooks /
 
-RUN usermod -o -u "${NB_UID}" user i
+RUN usermod -o -u "${NB_UID}" user 
 
 USER ${NB_USER}
 
