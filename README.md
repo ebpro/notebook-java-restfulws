@@ -1,6 +1,6 @@
 # JAX-RS Notebook
 
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/ebpro/javanotebook-jaxrs/feature/experimental?urlpath=lab)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/ebpro/javanotebook-jaxrs/feature/experimental?urlpath=lab&filepath=%2Fnotebooks)
 
 ## Usage
 

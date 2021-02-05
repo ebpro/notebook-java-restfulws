@@ -12,7 +12,6 @@ RUN adduser -D \
     -s /bin/zsh \
     ${NB_USER}
 
-COPY notebooks /
 
 # USER root
 RUN cp -r /home/user/. /home/${NB_USER} && \
@@ -29,5 +28,7 @@ RUN echo "conda activate base" >> $HOME/.zshrc && \
         echo "[[ ! -f /opt/sdkman/bin/sdkman-init.sh ]] || source /opt/sdkman/bin/sdkman-init.sh" >> $HOME/.zshrc
 
 USER ${NB_USER}
+
+COPY notebooks /
 
 ENTRYPOINT []
