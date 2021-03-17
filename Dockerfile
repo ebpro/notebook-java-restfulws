@@ -1,7 +1,7 @@
 FROM brunoe/jupyterjava:feature_binder
 
-USER root
 COPY notebooks /notebooks
+USER root
 RUN usermod -o -u "$NB_UID" "$USER" && \
 	adduser "$USER" codeserver && \
 	mkdir /src && \
