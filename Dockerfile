@@ -1,5 +1,11 @@
 FROM brunoe/jupyterjava:feature_binder
 
+ARG NB_USER=jovyan
+ARG NB_UID=1000
+ENV USER ${NB_USER}
+ENV NB_UID ${NB_UID}
+ENV HOME /home/${NB_USER}
+
 COPY notebooks /notebooks
 USER root
 RUN usermod -o -u "$NB_UID" "$USER" && \
