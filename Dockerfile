@@ -23,4 +23,8 @@ SHELL ["/bin/zsh","--interactive","-c"]
 
 # . /home/user/.zshrc
 ENV  CODE_WORKINGDIR=/src
+ENV JAVA_HOME /home/jovyan/.sdkman/candidates/java/current' >> /etc/environment 
+ENV PATH /home/jovyan/.sdkman/candidates/maven/current/bin:/home/jovyan/.sdkman/candidates/java/current/bin:/opt/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin' >> /etc/environment 
+
+
 ENTRYPOINT []
