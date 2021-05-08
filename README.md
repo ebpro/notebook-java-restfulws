@@ -1,5 +1,7 @@
 # JAX-RS Notebook
 
+A introduction to JAX-RS with Jersey on top of Grizzly.
+
 ## Usage
 
 ### Online
