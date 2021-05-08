@@ -1,2 +1,0 @@
-FROM brunoe/jupyterjava:feature_binder
-COPY notebooks/ /notebooks/
