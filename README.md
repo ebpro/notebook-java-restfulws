@@ -15,7 +15,7 @@ clone this repository, enter the directory and launch :
 ```shell
 docker run --rm \
        --name JupyterJava \
-       --volume $PWD/notebooks:/home/jovyan/work \
+       --volume $PWD/work:/home/jovyan/work \
         --publish 8888:8888 \
         --env NB_UID=$UID \
         --env JUPYTER_ENABLE_LAB=yes \

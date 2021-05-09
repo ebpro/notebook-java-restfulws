@@ -1,3 +1,4 @@
-src
-codeserver
+work/src/
+work/codeserver/
 .ipynb_checkpoints
+work/.m2/
