@@ -1,1 +1,5 @@
+codeserver
+src
+env.sh
 run.sh
+zsh:1: command not found: q
