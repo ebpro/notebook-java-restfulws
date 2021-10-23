@@ -1,8 +1,6 @@
-#!/usr/bin/env bash
-
 docker run --rm \
-       --name jupyterjava_${PWD##*/} \
-       --volume $PWD/work:/home/jovyan/work \
+       --name JupyterJava-${PWD##*/} \
+       --volume $PWD:/home/jovyan/${PWD##*/} \
         --publish 8888:8888 \
         --env NB_UID=$UID \
         --env JUPYTER_ENABLE_LAB=yes \

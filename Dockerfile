@@ -1,1 +1,0 @@
-FROM brunoe/jupyterjava:develop
