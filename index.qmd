@@ -1,0 +1,12 @@
+---
+title: REST en Java
+description: Introduction aux services REST en Java
+
+metadata-files:
+  - quarto-utils/index-listing.yml
+
+listing: true
+
+jupyter: java-lts
+---
+

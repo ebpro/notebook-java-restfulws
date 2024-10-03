@@ -10,3 +10,4 @@ local.db
 /.quarto/
 .jupyter_cache
 *_files/
+_output/
