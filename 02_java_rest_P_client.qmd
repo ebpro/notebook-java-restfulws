@@ -1,0 +1,113 @@
+---
+title: Exercices pratiques REST
+description: Découvrez les APIs REST avec cURL et Java
+categories:
+  - Java
+  - Exercices
+  - RESTful
+  - Web Services 
+provide_notes: true
+provide_slides: false
+jupyter: java-lts
+---
+
+## Exercice 1: Explorer les APIs REST avec cURL
+
+### Requêtes basiques
+
+Découvrons l'API ISS (Station Spatiale Internationale) qui ne nécessite pas d'authentification.
+http://open-notify.org/Open-Notify-API/ISS-Location-Now/
+
+#### Position actuelle de l'ISS
+
+```bash
+curl -i http://api.open-notify.org/iss-now.json
+```
+
+#### Astronautes dans l'espace
+
+```bash
+curl -i "http://api.open-notify.org/astros.json"
+```
+
+### Requêtes avec paramètres et authentification
+
+Il faut généralement ajouter des paramètres à une requête pour obtenir des informations spécifiques.
+En particulier, une authentificatyion sous la forme d'une clé API (token) est souvent nécessaire.
+
+Créer un compte et obtenu un token pour https://openweathermap.org/appid#start puis https://home.openweathermap.org/api_keys 
+Puis faites des requêtes pour obtenir la météo d'une ville. Attention, cela prend du temps.
+
+```bash
+curl -s "https://api.openweathermap.org/data/2.5/weather?q=Toulon,fr&appid=$TOKEN" | jq
+```
+
+Le résultat est en JSON, pour le formater, on peut utiliser `jq`. 
+La commande `jq` permet de formater et filtrer des données JSON.
+
+Il est aussi possible d'utiliser des options cURL pour envoyer des paramètres.
+
+```bash
+curl -v "https://api.openweathermap.org/data/2.5/weather" \
+     -G \
+     --data-urlencode "q=Toulon,fr" \
+     --data-urlencode "units=metric" \
+     --data-urlencode "appid=$TOKEN"
+```
+
+### Manipulation des headers et formats
+
+Pour spécifier le format de la réponse ou envoyer des headers spécifiques, on peut utiliser des options cURL.
+
+```bash
+# Demander du JSON
+curl -v -H "Accept: application/json" "https://api.github.com/users/octocat"
+
+# Demander un format spécifique de GitHub
+curl -v -H "Accept: application/vnd.github.v3+json" "https://api.github.com/users/octocat"
+```
+
+Découvrez l'api Github en utilisant votre propre token. https://docs.github.com/en/rest/authentication/authenticating-to-the-rest-api 
+
+```bash
+# Bearer Token
+curl -v -H "Authorization: Bearer YOUR_TOKEN" "https://api.github.com/user"
+```
+
+### Exercices pratiques 
+
+1. Utilisez cURL pour explorer l'API OpenWeatherMap en pour afficher la méthode de plusieurs villes
+2. Compléter le script shell suivant pour afficher la latitude et la longitude de l'ISS toutes les 30secondes.
+  ```bash
+  # Script pour suivre l'ISS
+  while true; do
+      curl ... | \
+      jq ...
+      sleep 30
+  done
+  ```
+3. Décrouvez des API publiques utiles : 
+  - NASA : https://api.nasa.gov/ 
+  - openstreetmap : `curl -s "https://nominatim.openstreetmap.org/search?q=Eiffel+Tower&format=json"|jq`
+  - SNCF: https://ressources.data.sncf.com/api/v1/console/datasets/1.0/search/  
+  - datalab et etalanb : https://api.gouv.fr/v1/apis
+
+
+## Exercice 2: Explorer OpenAPI
+
+OpenAPI est une spécification pour décrire des APIs REST. Elle permet de générer des clients dans de nombreux langages.
+Elle permet aussi de générer de la documentation et des tests.
+
+1. Visitez https://petstore.swagger.io/
+2. Examinez la structure du document OpenAPI
+3. Testez les endpoints via l'interface Swagger UI
+
+
+## Exercice 3. Client Java avec Jersey
+
+A partir des exemples vus en cours et de la documentation de Jersey (https://eclipse-ee4j.github.io/jersey.github.io/documentation/latest31x/client.html), créez un client REST pour l'API REST de votre choix.
+
+## Exercice 4 Client Quarkus (Optionnel)
+
+Quarkus est un framework Java pour les applications cloud-native. Il propose un client REST basé sur RESTEasy.
+A partir du tutoriel https://quarkus.io/guides/rest-client créer un client REST pour l'API de votre choix.

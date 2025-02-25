@@ -1,0 +1,382 @@
+---
+title: 'Jakarta RESTful Web Services (JAX-RS)'
+description: |
+  Introduction aux services web RESTful avec Jakarta EE.
+  - Concepts fondamentaux de JAX-RS
+  - Création de services web REST
+  - Annotations et configurations
+  - Gestion des ressources et endpoints
+categories:
+  - Java
+  - Lecture
+  - I211
+  - RESTful
+  - Web Services
+provide_notes: true
+provide_slides: false
+jupyter: java-lts
+execute: 
+  error: true
+---
+
+## Informations techniques 
+
+:::: {layout="[ 0.5, -0.05, 0.45 ]"}
+::: {#first-column}
+{{< include ./quarto-utils/_tools_Git_Java.qmd >}}
+:::
+::: {#second-column}
+{{< include ./quarto-utils/_tools_Java_Java.qmd >}}
+:::
+::::
+
+Java propose un standard appelé [Jakarta RESTful Web Services](https://jakarta.ee/specifications/restful-ws/3.1/jakarta-restful-ws-spec-3.1) pour construire efficacement des serveurs et des clients REST. 
+[Jersey](https://eclipse-ee4j.github.io/jersey/download.html) est l'implantation de référence. 
+
+Ce cours présente la version 3.1, la version actuelle de la spécification est la [4.0](https://jakarta.ee/specifications/restful-ws/4.0/jakarta-restful-ws-spec-4.0)
+
+## Une application REST minimale
+
+Pour créer des applications REST en Java, il faut utiliser une implantation de Jakarta RESTful Web Services. Par exemple, il est possible d'utiliser le framework [Jersey](https://eclipse-ee4j.github.io/jersey/download.html) qui est l'implantation de référence de la spécification JAX-RS.
+Dans un premier temps nous allons étudier une application minimale qui s'appuie sur Jersey intégré dans un serveur Web en Java [Grizzly](https://javaee.github.io/grizzly/).
+
+Dans la partie pratique, nous utiliserons une autre approche pour créer des applications REST en Java en utilisant le framework [Quarkus](https://quarkus.io/).
+
+L’archetype maven suivant permet de créer un projet de base dans le répertoire `/home/jovyan/work/src/samples/jaxrs/myresource`. 
+
+```{java}
+//|echo: true
+//|output: true
+%%shell
+mkdir -p /home/jovyan/work/src/samples/jaxrs
+cd /home/jovyan/work/src/samples/jaxrs
+rm -rf /home/jovyan/work/src/samples/jaxrs/myresource
+
+mvn archetype:generate --batch-mode --no-transfer-progress --quiet \
+  -DarchetypeGroupId=org.glassfish.jersey.archetypes \
+  -DarchetypeArtifactId=jersey-quickstart-grizzly2 \
+  -DarchetypeVersion=3.1.10 \
+  -DgroupId=fr.univtln.bruno.demos.jaxrs \
+  -DartifactId=myresource
+```
+
+Le serveur peut être compilé puis exécuté 
+
+```shell
+cd /home/jovyan/work/src/samples/jaxrs/myresource
+mvn package && mvn exec:java
+```
+
+Il est maintenant possible d’accéder à la ressource en ligne de commande à partir de l'adresse http://localhost:8080/myapp.
+
+```{java}
+//|echo: true
+//|output: true
+%%shell
+cd /home/jovyan/work/src/samples/jaxrs/myresource
+mvn --quiet --ntp package
+nohup mvn --quiet --ntp exec:java &    
+```
+
+Une application REST JAX-RS est construite autour de deux notions principales l'Application (le serveur) et les Ressources.
+Une instance d'une ressource est créée pour répondre à chaque requête et détruite ensuite. Elle peut donc être utilisée comme une sorte de singleton. Une ressource est définie annotant  une classe, un ou plusieurs de ses superclasses (y compris abstraites) ou l'une de ses interfaces. 
+
+Dans l'exemple, la classe `fr.univtln.bruno.demos.jaxrs.Main` démarre le serveur et paramètre les packages où le framework va chercher des ressources comme le montre la méthode ci-dessous.
+
+```{java}
+//| output: true
+//| echo: false
+
+String script="/home/jovyan/work/src/samples/jaxrs/myresource/src/main/java/fr/univtln/bruno/demos/jaxrs/Main.java";
+IJava.getKernelInstance().getMagics().applyCellMagic("javasrcMethodByName",List.of("Main","startServer"),script);
+return null;
+```
+
+La classe `fr.univtln.bruno.demos.jaxrs.MyResource` présente le fonctionnement minimal d'une ressource. La classe est annotée avec `@Path(...)` pour indiquer le chemin à ajouter à l’URL correspondant à cette ressource. D'une façon générale, les méthodes sont annotées avec `@POST`, `@GET`, `@PUT`,`@DELETE`, ... pour indiquer le type de verbe HTTP associé. 
+
+Les méthodes peuvent être annotées avec `@Produces` qui indique le ou les types MIME dans lequel le résultat peut être fourni : `@Produces("text/plain")`, `@Produces("application/json")`, … Il est possible d’indiquer plusieurs types avec `@Produces({"application/json", "application/xml"})`. Il existe aussi des constantes équivalentes `MediaType.TEXT_PLAIN`. Une valeur par défaut de `@Produces` peut être indiquée en annotant la classe.
+
+```{java}
+//| output: true
+//| echo: false
+//| tags: []
+//| vscode: {languageId: java}
+// PRINT CLASS
+String script="/home/jovyan/work/src/samples/jaxrs/myresource/src/main/java/fr/univtln/bruno/demos/jaxrs/MyResource.java";
+IJava.getKernelInstance().getMagics().applyCellMagic("javasrcMethodByAnnotationName",List.of("MyResource","GET"),script);
+return null;
+```
+
+Le client peut indiquer le type demandé parmi l'un des "produces" avec la valeur `Content-Type: ` de l'entête de la requête.
+
+La commande suivante exécute une requête GET sur l'URL d'une ressource et affiche le résultat en-tête compris. (Le serveur doit être lancé).
+
+```{java}
+//| slideshow: {slide_type: fragment}
+//| tags: []
+//| vscode: {languageId: java}
+%%shell
+URL=http://localhost:8080
+USER_AGENT="MyApplication/1.0"
+# curl -s -D - -H "User-Agent: ${USER_AGENT}" --get "${URL}/myresource" -v
+curl --silent --verbose -H "User-Agent: ${USER_AGENT}" --request GET "${URL}/myresource" 
+```
+
+## Une application REST plus complète
+
+Pour la suite nous allons étudier en détail l'application https://github.com/ebpro/sample-jaxrs.
+
+```{java}
+//| echo: false
+//| output: asis
+%%shell
+PROVIDER="github"
+REPO="ebpro/notebook-java-rest-sample-jakartarestfull"
+BRANCH="develop"
+gitpull.sh --provider github \
+  --branch ${BRANCH} ${REPO} \
+  --message "Les exemples suivants sont accessibles dans le dépôt :"
+```
+
+L'application peut être compilée et exécutée avec maven.
+Cela lance le serveur (vous pourrez l'arrêter avec ctrl-c dans le terminal).
+Cela compile, exécute les tests unitaires, package et exécute les tests d'intégration (en lançant le serveur REST et en exécutant de vraies requêtes).
+
+```shell 
+cd /home/jovyan/work/materials/github/ebpro/notebook-java-rest-sample-jakartarestfull && \
+    mvn clean verify &&
+    mvn exec:java
+```
+
+La classe `fr.univtln.bruno.samples.jaxrs.server.BiblioServer` paramètre Jersey, démarre Grizzly et attend un CTRL-C pour arrêter le serveur. 
+
+La classe `fr.univtln.bruno.samples.jaxrs.model.LibraryModel` définit le modèle de donnée (Une bibliothèque qui est une facade pour gérer des Auteurs et des Livres.)
+
+Les classes `fr.univtln.bruno.samples.jaxrs.resources.LibraryResource` et `fr.univtln.bruno.samples.jaxrs.resources.AuthorResource` définissent des ressources REST.
+
+```{java}
+//| echo: false
+//| output: false
+%%shell
+PROVIDER="github"
+REPO="ebpro/notebook-java-rest-sample-jakartarestfull"
+BRANCH="develop"
+source get_src_dir.sh ${PROVIDER} ${REPO} 
+cd ${SRC_DIR}
+./mvnw --quiet verify
+```
+
+```{java}
+//| echo: false
+//| output: false
+
+String SRC_DIR="/home/jovyan/work/materials/github/ebpro/notebook-java-rest-sample-jakartarestfull";
+%jars "/home/jovyan/work/materials/github/ebpro/notebook-java-rest-sample-jakartarestfull/target/sample-jaxrs-*-withdependencies.jar";
+```
+
+```{java}
+//| output: false
+//| echo: false
+import org.glassfish.grizzly.http.server.HttpServer;
+import fr.univtln.bruno.samples.jaxrs.server.BiblioServer;
+HttpServer httpServer = BiblioServer.startServer();
+httpServer.toString();
+```
+
+### Chemins et Verbes
+La méthode `sayHello()` reprend l'exemple précédent.
+
+```{java}
+//| output: true
+//| echo: false
+//| vscode: {languageId: java}
+// PRINT CLASS
+String script=SRC_DIR+"/src/main/java/fr/univtln/bruno/samples/jaxrs/resources/LibraryResource.java";
+IJava.getKernelInstance().getMagics().applyCellMagic("javasrcMethodByName",List.of("LibraryResource","sayHello"),script);
+return null;
+```
+
+```{java}
+//| slideshow: {slide_type: fragment}
+//| tags: []
+//| vscode: {languageId: java}
+%%shell
+curl -s -v http://localhost:9998/mylibrary/library|jq
+```
+
+D'autres verbe peuvent être utilisé sur le même chemin. Une méthode peut aussi être annotées avec `@Path` pour définir le chemin associé à cette méthode.
+
+La méthode `init()` est un simple `PUT` sans paramètre qui initialise la bibliothèque avec deux auteurs.
+
+```{java}
+//| output: true
+//| echo: false
+//| vscode: {languageId: java}
+// PRINT CLASS
+String script=SRC_DIR+"/src/main/java/fr/univtln/bruno/samples/jaxrs/resources/LibraryResource.java";
+IJava.getKernelInstance().getMagics().applyCellMagic("javasrcMethodByName",List.of("LibraryResource","init"),script);
+return null;
+```
+
+```{java}
+//| slideshow: {slide_type: fragment}
+//| tags: []
+//| vscode: {languageId: java}
+%%shell
+curl -s -i -X PUT "http://localhost:9998/mylibrary/library/init"
+```
+
+### Les paramètres simples
+
+JAX-RS permet d'extraire automatiquement des valeurs de paramètres depuis le chemin de la ressources, les paramêtres de la requête ou l'entête http. Ces valeurs peuvent alors être "injectées" (affectée par annotation aux paramètres des méthodes REST).
+
+L’annotation `@PathParam` permet d’injecter les valeurs provenant des URL comme des paramètres.
+
+La méthode `getAuthor(@PathParam("id") final long id)` ci dessous-s'exécute lors d'un `GET` sur un chemin de forme `@Path("author/{id}")`. `id` est est un pas de chemin quelconque qui sera extrait, converti en long et injecté grâce à `@PathParam` dans le paramètre `id` de la fonction. Il est possible d'indiquer une expression régulière pour contraindre la forme du pas par exemple `@Path("authors/{id: [0-9]+}")`. 
+
+Le `@Produces` sur la classe indique que du XML ou du JSON peuvent être produits.
+Les méthodes REST retournent instance de la classe Response qui représente une réponse HTTP. Cette classe propose un builder pour construire manuellement. 
+Cependant, JAX-RS permet de construite automatiquement ces réponses si le type de retour peut être transformé en un contenu de réponse (une entité http) par une implantation de l'interface `MessageBodyWriter`. Les implantations de JAX-RS en fournissent généralement par défaut par exemple pour String voire pour XML ou JSON (via les mécanismes de marshalling qui seront étudiés en détail plus tard).
+
+```{java}
+//| output: true
+//| echo: false
+//| vscode: {languageId: java}
+// PRINT CLASS
+String script=SRC_DIR+"/src/main/java/fr/univtln/bruno/samples/jaxrs/resources/AuthorResource.java";
+IJava.getKernelInstance().getMagics().applyCellMagic("javasrcMethodByName",List.of("AuthorResource","getAuthor"),script);
+return null;
+```
+
+Get author 1 in JSON :
+
+```{java}
+//| slideshow: {slide_type: subslide}
+//| tags: []
+//| vscode: {languageId: java}
+%%shell
+curl -s -v -H "Accept: application/json"  \
+  http://localhost:9998/mylibrary/authors/1|jq
+```
+
+La requête suivante reprend la précédente et demande du XML. JAX-RS va chercher automatiquement des classes (MessageBodyWriter et Reader) pour créer le bon format. Ces classes peuvent construites explicitement mais des extensions peuvent être ajoutées pour produire les types classiques par annotations des entités (cf. le pom.xml et  les annotations de la classe `BiblioModel.Auteur`) : jersey-media-jaxb pour XML et jersey-media-json-jackson pour JSON. Jackson n'est pas l'implantatation pas défaut mais elle est plus efficace et plus configurable. 
+
+Get author 2 in XML :
+
+```{java}
+//| slideshow: {slide_type: fragment}
+//| tags: []
+//| vscode: {languageId: java}
+%%shell
+curl -s -i -H "Accept: text/xml"  \
+  http://localhost:9998/mylibrary/authors/2
+```
+
+Les collections classiques sont supportés. Notez qu'ici les [collections eclipse](https://www.eclipse.org/collections/) sont utilisées en particulier celles pour les primitifs et qu'elles sont supportées par Jackson.
+
+Get authors in XML :
+
+```{java}
+//| output: true
+//| echo: false
+//| vscode: {languageId: java}
+// PRINT CLASS
+String script=SRC_DIR+"/src/main/java/fr/univtln/bruno/samples/jaxrs/resources/AuthorResource.java";
+IJava.getKernelInstance().getMagics().applyCellMagic("javasrcMethodByName",List.of("AuthorResource","getAuthors"),script);
+return null;
+```
+
+Get authors in JSON
+
+```{java}
+//| tags: []
+//| vscode: {languageId: java}
+%%shell
+curl -s -v -H "Accept: application/json"  \
+  http://localhost:9998/mylibrary/authors|jq
+```
+
+D'une façon similaire les annotations `@HeaderParam` et `@QueryParam` permettent d'extraire des valeurs de l'entête ou des paramètres de la requête http.
+La méthode suivante permet de construire un filtre pour des requêtes complexe. L'utilisation d'un chemin différent ("filter") n'est utile que pour l'exemple dans une application réelle il n'y aura qu'un seul GET. 
+
+```{java}
+//| output: true
+//| echo: false
+//| vscode: {languageId: java}
+// PRINT CLASS
+String script=SRC_DIR+"/src/main/java/fr/univtln/bruno/samples/jaxrs/resources/AuthorResource.java";
+IJava.getKernelInstance().getMagics().applyCellMagic("javasrcMethodByName",List.of("AuthorResource","getFilteredAuthors"),script);
+return null;
+```
+
+```{java}
+//| vscode: {languageId: java}
+%%shell
+curl -s -v -H "Accept: application/json"  \
+ "http://localhost:9998/mylibrary/authors/filter?name=Durand&firstname=Marie"|jq
+```
+
+```{java}
+//| vscode: {languageId: java}
+%%shell
+curl -s -v -H "Accept: application/json"  \
+-H "sortKey: firstname" \
+  "http://localhost:9998/mylibrary/authors/filter"|jq
+```
+
+Pour simplifier le traitement des paramètres JAX-RX propose l'annotation `@BeanParam` qui permet de créer un instance d'une classe à partir des paramètres extraits. Pour cela, les propriétés de la classe peuvent être annotées pour indiquer les paramêtres correspondants.
+
+L'exemple suivant montre comment l'utiliser pour mettre en place la pagination qui est essentielle quand le volume des données peut être important. Là aussi le chemin spécifique ("page") n'est là que pour l'exemple. 
+
+```{java}
+//| output: true
+//| echo: false
+//| vscode: {languageId: java}
+// PRINT CLASS
+String script=SRC_DIR+"/src/main/java/fr/univtln/bruno/samples/jaxrs/resources/PaginationInfo.java";
+IJava.getKernelInstance().getMagics().applyCellMagic("javasrcClassByName",List.of("PaginationInfo"),script);
+return null;
+```
+
+```{java}
+//| output: true
+//| echo: false
+//| vscode: {languageId: java}
+// PRINT CLASS
+String script=SRC_DIR+"/src/main/java/fr/univtln/bruno/samples/jaxrs/resources/AuthorResource.java";
+IJava.getKernelInstance().getMagics().applyCellMagic("javasrcMethodByName",List.of("AuthorResource","getAuthorsPage"),script);
+return null;
+```
+
+L'appel suivant de l'API génère alétoirement 100 auteurs.
+
+```{java}
+//| vscode: {languageId: java}
+%%shell
+curl -s -i -X PUT "http://localhost:9998/mylibrary/library/init/100"
+```
+
+On peut alors demander la page 3 (de taille 4).
+
+```{java}
+//| vscode: {languageId: java}
+%%shell
+curl -s -v -H "Accept: application/json"  \
+-H "sortKey: firstname" \
+  "http://localhost:9998/mylibrary/authors/page?pageSize=4&page=3"|jq
+```
+
+L'appel suivant de l'API remet uniquement deux auteurs dans la base de données.
+
+```{java}
+//| vscode: {languageId: java}
+%%shell
+curl -s -i -X PUT "http://localhost:9998/mylibrary/library/init"
+```
+
+```{java}
+//| vscode: {languageId: java}
+httpServer.stop();
+```
+
+

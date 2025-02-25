@@ -1,0 +1,311 @@
+---
+title: 'Sécurité des Services REST'
+description: |
+  Implémentation de la sécurité dans les services REST.
+  - Transport Layer Security (TLS/SSL)
+  - Authentification et autorisation
+  - JSON Web Tokens (JWT)
+  - Gestion des rôles et permissions
+  - Bonnes pratiques de sécurité
+  - Filtres de sécurité JAX-RS
+categories:
+  - Java
+  - Lecture
+  - I211
+  - RESTful
+  - Web Services
+  - Sécurité
+  - Authentification
+  - Autorisation
+provide_notes: true
+provide_slides: false
+jupyter: java-lts
+execute: 
+    echo: true
+    output: true
+    error: true
+---
+
+:::: {layout="[ 0.5, -0.05, 0.45 ]"}
+::: {#first-column}
+{{< include ./quarto-utils/_tools_Git_Java.qmd >}}
+:::
+::: {#second-column}
+{{< include ./quarto-utils/_tools_Java_Java.qmd >}}
+:::
+::::
+
+```{java}
+//| echo: false
+//| output: asis
+%%shell
+PROVIDER="github"
+REPO="ebpro/notebook-java-rest-sample-jakartarestfull"
+BRANCH="develop"
+gitpull.sh --provider github \
+  --branch ${BRANCH} ${REPO} \
+  --message "Les exemples suivants sont accessibles dans le dépôt :"
+```
+```{java}
+//| echo: false
+//| output: false
+%%shell
+PROVIDER="github"
+REPO="ebpro/notebook-java-rest-sample-jakartarestfull"
+BRANCH="develop"
+source get_src_dir.sh ${PROVIDER} ${REPO} 
+cd ${SRC_DIR}
+./mvnw --quiet verify
+```
+```{java}
+//| echo: false
+//| output: false
+
+String SRC_DIR="/home/jovyan/work/materials/github/ebpro/notebook-java-rest-sample-jakartarestfull";
+%jars "/home/jovyan/work/materials/github/ebpro/notebook-java-rest-sample-jakartarestfull/target/sample-jaxrs-*-withdependencies.jar";
+```
+
+```{java}
+//| output: false
+//| echo: false
+//| vscode: {languageId: java}
+import org.glassfish.grizzly.http.server.HttpServer;
+import fr.univtln.bruno.samples.jaxrs.server.BiblioServer;
+```
+
+
+Pour assurer la sécurité d'une API REST, la première chose à faire est d'assurer la confidentialité. Pour cela, il faut utiliser HTTPS qui utilise TLS pour permettre de valider l'identité du serveur et pour garantir la confidentialité et l'intégrité des données échangées en utilisant des certificats. 
+
+Pour mettre cela en place, il est possible d'utiliser un "reverse proxy" (par exemple [nginx](https://docs.nginx.com/nginx/admin-guide/web-server/reverse-proxy/]) qui lui sera sécurisé et servira de facade, le serveur REST n'étant jamais accessible autrement.
+
+L'autre solution est de sécuriser les serveurs web (dans notre exemple Java, Grizzly). Pour cela, il faut idéalement se procurer des certificats pour le serveurs signés par une autorité reconnue. Nous utiliserons ici des certificats auto-signés dans un but de démonstration uniquement.
+
+Le certificat du serveur est habituellement généré avec openssl, ici nous utilisons maven (`keytool-maven-plugin`) pour le générer automatiquement s'il n'existe pas déjà dans le répertoire `/src/jaxrs/sample-jaxrs/src/main/resources/ssl/`. Le certificat est automatiquement ajouté à un keystore Java dans le même répertoire (cert.jks).  
+
+Le serveur Grizzly est en écoute avec HTTP sur le port 9998 et en HTTPS sur le port 4443.
+
+Cette méthode ajoute aussi le support de HTTP2 qui améliore grandement les performances.
+
+### TLS avec Grizzly
+
+```{java}
+//| output: true
+//| echo: false
+//| vscode: {languageId: java}
+// PRINT CLASS
+String script="/home/jovyan/work/materials/github/ebpro/notebook-java-rest-sample-jakartarestfull/src/main/java/fr/univtln/bruno/samples/jaxrs/server/BiblioServer.java";
+IJava.getKernelInstance().getMagics().applyCellMagic("javasrcMethodByName",List.of("BiblioServer","addTLSandHTTP2"),script);
+return null;
+```
+
+On commence donc par activer TLS. On en profite pour activer aussi le support de HTTP2.
+
+```{java}
+//| output: false
+//| echo: false
+//| vscode: {languageId: java}
+import org.glassfish.grizzly.http.server.HttpServer;
+import fr.univtln.bruno.samples.jaxrs.server.BiblioServer;
+```
+
+```{java}
+//| vscode: {languageId: java}
+HttpServer httpServer = BiblioServer.startServer();
+BiblioServer.addTLSandHTTP2(httpServer);
+```
+
+Pour tester les requêtes sécurisée avec un certificat autosigné il faut d'abord le télécharger (ici avec la commande curl). 
+
+```{java}
+//| vscode: {languageId: java}
+%%shell
+echo quit | \
+    openssl s_client -showcerts \
+        -servername localhost \
+        -connect localhost:4443 >! /tmp/cacert.pem  
+```
+
+
+Il sera ensuite utilisé pour valider l'indentité du serveur web.
+
+```{java}
+//| vscode: {languageId: java}
+%%shell
+curl --silent \
+    --trace-ascii /tmp/trace-secure.txt \
+    --http2 \
+    --cacert /tmp/cacert.pem \
+    https://localhost:4443/mylibrary/library
+```
+
+### Authentification
+
+Il faut mettre en place une gestion correcte des utilisateurs (login+mots de passe hashés correctement). Cela pourra être complété/remplacé par des certificats ou une délégation d'authentification.
+
+Dans cet example, nous utilisons une base de données d'utilisateurs en mémoire.
+
+```{java}
+//| vscode: {languageId: java}
+fr.univtln.bruno.samples.jaxrs.security.InMemoryLoginModule.USER_DATABASE.getUsers()
+```
+
+### Autorisation
+
+L'Autorisation est cruciale, elle peut s'appuyer un token qui est fourni par le système lors d'un login et a une durée de vie limitée.
+Ce token est envoyé avec chaque requête et le système lui attribue un ensemble de permission. 
+
+Un autre approche est d'utiliser un token cryptographique qui contient ces informations et qui est signée par le serveur. 
+
+Par exemple avec les [JSON Web Token - JWT](https://jwt.io/) qui présente en détail le processus type. 
+
+Dans ces exemples, nous utiliserons la librairies Java  [JJWT](https://github.com/jwtk/jjwt).
+
+Voilà des exemples d'utilisations simples.
+
+**Accès refusé à une ressource sécurisée.**
+
+```{java}
+//| vscode: {languageId: java}
+%%shell
+curl -s -i --http2 \
+    --cacert /tmp/cacert.pem \
+    -H "Accept: application/json" \
+    https://localhost:4443/mylibrary/setup/secured
+```
+
+**Utilisation de la "Basic Authentication" pour obtenir un Java Web Token.**
+
+```{java}
+//| vscode: {languageId: java}
+%%shell
+curl -s -s --http2 \
+    --cacert /tmp/cacert.pem \
+    --user "john.doe@nowhere.com:admin" \
+    https://localhost:4443/mylibrary/setup/login
+```
+
+***Décodage d'un JWT***
+
+Il suffit de faire une requête rest et d'en obtenir un.
+
+```{java}
+//| output: false
+//| echo: false
+//| vscode: {languageId: java}
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.WebTarget;
+import jakarta.ws.rs.client.ClientBuilder;
+```
+
+```{java}
+//| vscode: {languageId: java}
+Client client = ClientBuilder.newClient();
+WebTarget webResource = client.target("http://localhost:9998/mylibrary");
+String email = "john.doe@nowhere.com";
+String passwd = "admin";
+String token = webResource.path("setup/login")
+                .request()
+//                .accept(MediaType.TEXT_PLAIN)
+                .header("Authorization", "Basic " + java.util.Base64.getEncoder().encodeToString((email + ":" + passwd).getBytes()))
+                .get(String.class);
+token;
+```
+
+puis en utilisant la clé publique (dans cette exemple simple ont y accède directement côté serveur), il est possible de vérifier les informations. Ici le choix a été fait d'utiliser une approche RBAC (Role Based Access Control) embarquée dans le token qui cumule donc authentification et autorisation. Cela rend le système très simple mais à comme conséquence de faire qu'un change de droit n'est appliqué qu'à la fin de la durée de vie du token.
+
+```{java}
+//| output: false
+//| echo: false
+//| vscode: {languageId: java}
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jws;
+import io.jsonwebtoken.Jwts;
+
+import fr.univtln.bruno.samples.jaxrs.security.InMemoryLoginModule;
+```
+
+```{java}
+//| vscode: {languageId: java}
+Jws<Claims> jws = Jwts.parser()
+                    .verifyWith(InMemoryLoginModule.KEY)
+                    .build()
+                    .parseSignedClaims(token);
+
+jws;
+```
+
+**Utilisation d'un Java Web Token.**
+Le token peut donc être transmis au serveur qui le vérifie et l'utilise pour l'authentification voir l'autorisation.
+Ici l'accès à une ressource qui demande d'être user ou admin est autorisé à un admin.
+
+```{java}
+//| vscode: {languageId: java}
+%%shell
+TOKEN=$(curl -s --http2 \
+    --cacert /tmp/cacert.pem \
+    --user "john.doe@nowhere.com:admin" \
+    https://localhost:4443/mylibrary/setup/login)
+
+curl -s -i --http2 \
+    --cacert /tmp/cacert.pem \
+    -H "Authorization: Bearer ${TOKEN}" \
+    https://localhost:4443/mylibrary/setup/secured
+```
+
+tout comme l'accès à une ressource qui demande d'être admin est autorisé à un admin.
+
+```{java}
+//| vscode: {languageId: java}
+%%shell
+TOKEN=$(curl -s --http2 \
+    --cacert /tmp/cacert.pem \
+    --user "john.doe@nowhere.com:admin" \
+    https://localhost:4443/mylibrary/setup/login)
+
+curl -s -i --http2 \
+    --cacert /tmp/cacert.pem \
+    -H "Authorization: Bearer ${TOKEN}" \
+    https://localhost:4443/mylibrary/setup/secured/admin       
+```
+
+L'accès à une ressource qui demande d'être user ou admin est autorisé à un user.
+
+```{java}
+//| vscode: {languageId: java}
+%%shell
+TOKEN=$(curl -s --http2 \
+    --cacert /tmp/cacert.pem \
+    --user "william.smith@here.net:user" \
+    https://localhost:4443/mylibrary/setup/login)
+
+curl -i -s --http2 \
+    --cacert /tmp/cacert.pem \
+    -H "Authorization: Bearer ${TOKEN}" \
+    https://localhost:4443/mylibrary/setup/secured
+```
+
+mais l'accès à une ressource qui demande d'être admin est refusée à un user.
+
+```{java}
+//| vscode: {languageId: java}
+%%shell
+TOKEN=$(curl -s \
+    --user "william.smith@here.net:user" \
+    https://localhost:4443/mylibrary/setup/login)
+curl -s -i --http2 \
+    --cacert /tmp/cacert.pem \
+    -H "Authorization: Bearer ${TOKEN}" \
+    https://localhost:4443/mylibrary/setup/secured/admin
+```
+
+L'application exemple présente en détail comment un filtre JAX-RS et des annotations peuvent être utilisé pour appliquer une politique de contrôle d'accès.
+
+```{java}
+//| output: false
+//| echo: false
+//| vscode: {languageId: java}
+httpServer.stop();
+```
+
+
+

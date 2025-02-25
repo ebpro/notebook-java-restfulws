@@ -1,3 +1,4 @@
+HIDDEN
 .DS_Store
 .idea
 .ipynb_checkpoints/
@@ -11,3 +12,4 @@ local.db
 .jupyter_cache
 *_files/
 _output/
+_freeze

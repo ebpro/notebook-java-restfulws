@@ -1,6 +1,17 @@
 ---
-title: REST en Java
-description: Introduction aux services REST en Java
+title: "Services Web RESTful avec Java"
+description: |
+  Introduction au développement de services web RESTful avec Java.
+  - Concepts fondamentaux REST et HTTP
+  - Implémentation avec Jakarta RESTful Web Services
+  - Sérialisation et gestion des données
+  - Sécurité et bonnes pratiques
+categories:
+  - Java
+  - RESTful
+  - Web Services
+  - API Design
+  - Jakarta EE
 
 metadata-files:
   - quarto-utils/index-listing.yml

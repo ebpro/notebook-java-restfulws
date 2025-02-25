@@ -1,3 +1,12 @@
 [submodule "quarto-utils"]
 	path = quarto-utils
 	url = git@github.com:ebpro/quarto-utils.git
+[submodule "notebook-java-rest-sample-jakartapersistence"]
+	path = notebook-java-rest-sample-jakartapersistence
+	url = git@github.com:ebpro/notebook-java-rest-sample-jakartapersistence.git
+[submodule "notebook-java-network-sample-tcpclientserver"]
+	path = notebook-java-network-sample-tcpclientserver
+	url = git@github.com:ebpro/notebook-java-network-sample-tcpclientserver.git
+[submodule "notebook-java-rest-sample-jakartarestfull"]
+	path = notebook-java-rest-sample-jakartarestfull
+	url = git@github.com:ebpro/notebook-java-rest-sample-jakartarestfull.git

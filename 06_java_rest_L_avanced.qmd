@@ -1,0 +1,166 @@
+---
+title: 'Concepts avancés de Jakarta RESTful Web Services'
+description: |
+  Fonctionnalités avancées pour le développement de services REST robustes.
+  - Providers et extensions JAX-RS
+  - Filtres et intercepteurs
+  - Schémas et documentation (WADL, OpenAPI)
+  - Gestion des exceptions
+  - Sécurité et authentification
+  - Pagination et HATEOAS
+categories:
+  - Java
+  - Lecture
+  - I211
+  - RESTful
+  - Web Services
+provide_notes: true
+provide_slides: false
+jupyter: java-lts
+
+execute: 
+  error: true
+
+---
+
+:::: {layout="[ 0.5, -0.05, 0.45 ]"}
+::: {#first-column}
+{{< include ./quarto-utils/_tools_Git_Java.qmd >}}
+:::
+::: {#second-column}
+{{< include ./quarto-utils/_tools_Java_Java.qmd >}}
+:::
+::::
+
+```{java}
+//| echo: false
+//| output: asis
+%%shell
+PROVIDER="github"
+REPO="ebpro/notebook-java-rest-sample-jakartarestfull"
+BRANCH="develop"
+gitpull.sh --provider github \
+  --branch ${BRANCH} ${REPO} \
+  --message "Les exemples suivants sont accessibles dans le dépôt :"
+```
+```{java}
+//| echo: false
+//| output: false
+%%shell
+PROVIDER="github"
+REPO="ebpro/notebook-java-rest-sample-jakartarestfull"
+BRANCH="develop"
+source get_src_dir.sh ${PROVIDER} ${REPO} 
+cd ${SRC_DIR}
+./mvnw --quiet verify
+```
+```{java}
+//| echo: false
+//| output: false
+
+String SRC_DIR="/home/jovyan/work/materials/github/ebpro/notebook-java-rest-sample-jakartarestfull";
+%jars "/home/jovyan/work/materials/github/ebpro/notebook-java-rest-sample-jakartarestfull/target/sample-jaxrs-*-withdependencies.jar";
+```
+
+```{java}
+//| output: false
+//| echo: false
+//| vscode: {languageId: java}
+import org.glassfish.grizzly.http.server.HttpServer;
+import fr.univtln.bruno.samples.jaxrs.server.BiblioServer;
+HttpServer httpServer = BiblioServer.startServer();
+httpServer.toString();
+```
+
+
+# Les liens sémantiques
+
+Les liens sémantiques entre les resources peuvent être réprésentés à l'aide d'URLs de façon standard ((RFC8288)[https://tools.ietf.org/html/rfc8288]). Une liste complète est données sur le site de l'IANA : https://www.iana.org/assignments/link-relations/link-relations.xhtml. Les plus classiquement utilisé avec REST sont self, first, previous, next et last. Pour simplifier l'usage de l'API ces liens peuvent être fournis dans l'entête d'une réponse http et/ou dans le corps de la réponse (par exemple lors de la pagination).
+
+```http
+Link: <http://MyServer:8080/MyApp/Persons/1>; rel="first-person", <http://MyServer:8080/MyApp/Persons/10>; rel="next-person", <http://MyServer:8080/MyApp/Persons/8>; rel="previous-person", <http://MyServer:8080/MyApp/Persons/90>; rel="last-person"
+```
+
+## Etendre JAX-RS avec les Providers
+
+D'une façon générale une classe annotée par `@Provider` ajoute des fonctions à JAXRS (traitement des exceptions, conversion des données, ...).
+
+#### Les mappers : application aux exceptions
+Le traitement des exceptions peut être simplifié en utilisant des mappers (cf. package exceptions et mapper) qui s'appliquent automatiquement lors qu'une exception est émise. Dans ce cas un objet Response est construit manuellement pour contrôler le détail du corps et de l'entête. 
+
+```{java}
+//| output: true
+//| echo: false
+//| vscode: {languageId: java}
+// PRINT CLASS
+String script="/home/jovyan/work/materials/github/ebpro/notebook-java-rest-sample-jakartarestfull/src/main/java/fr/univtln/bruno/samples/jaxrs/exceptions/NotFoundException.java";
+IJava.getKernelInstance().getMagics().applyCellMagic("javasrcClassByName",List.of("NotFoundException"),script);
+return null;
+```
+
+```{java}
+//| output: true
+//| echo: false
+//| vscode: {languageId: java}
+// PRINT CLASS
+String script="/home/jovyan/work/materials/github/ebpro/notebook-java-rest-sample-jakartarestfull/src/main/java/fr/univtln/bruno/samples/jaxrs/mappers/BusinessExceptionMapper.java";
+IJava.getKernelInstance().getMagics().applyCellMagic("javasrcClassByName",List.of("BusinessExceptionMapper"),script);
+return null;
+```
+
+If a resource doesn't exist an exception is raised, and the 404 http status code is returned
+
+```{java}
+//| slideshow: {slide_type: fragment}
+//| tags: []
+//| vscode: {languageId: java}
+%%shell
+curl -s -i -H "Accept: application/json"  \
+  http://localhost:9998/mylibrary/authors/1000
+```
+
+## Les filtres : application au statut et à la pagination
+
+```{java}
+//| output: true
+//| echo: false
+//| vscode: {languageId: java}
+// PRINT CLASS
+String script="/home/jovyan/work/materials/github/ebpro/notebook-java-rest-sample-jakartarestfull/src/main/java/fr/univtln/bruno/samples/jaxrs/status/StatusFilter.java";
+IJava.getKernelInstance().getMagics().applyCellMagic("javasrcClassByName",List.of("StatusFilter"),script);
+return null;
+
+```
+
+```{java}
+//| vscode: {languageId: java}
+%%shell
+cat /home/jovyan/work/materials/github/ebpro/notebook-java-rest-sample-jakartarestfull/src/main/java/fr/univtln/bruno/samples/jaxrs/status/Status.java
+```
+
+Un exemple de filtre appliqué à la requête sera donné dans la partie sur la sécurité.
+
+## Schéma d'une API REST
+
+  * [WSDL](https://www.w3.org/TR/wsdl/) un autre langage de service Web permet de décrire un tel [schéma](https://www.ibm.com/developerworks/webservices/library/ws-restwsdl/).
+  * Le langage [WADL](https://www.w3.org/Submission/wadl/) est spécifique à REST. 
+  * Par défaut Jersey génére une description WADL `/application.wadl`
+  * Cependant, pour cela l'application nécessite une implantation du standard pour traiter les documents XML appelé [JAXB](https://eclipse-ee4j.github.io/jaxb-ri/) qui n'est plus fournie en standard dans le JDK depuis la version 8 (nous utilisons ici la version 15).
+
+Si JAXB est dans le classpath (cf. pom.xml) la génération d'une description WADL est automatique.
+
+```{java}
+//| vscode: {languageId: java}
+%%shell
+curl -s -D - --get http://localhost:9998/mylibrary/application.wadl
+```
+
+https://jakarta.ee/specifications/restful-ws/3.0/jakarta-restful-ws-spec-3.0.html#context
+
+```{java}
+//| output: false
+//| echo: false
+//| vscode: {languageId: java}
+httpServer.stop();
+```
+

@@ -1,0 +1,381 @@
+---
+title: 'Client REST avec Jakarta RESTful Web Services'
+description: Guide pratique pour créer des clients REST en Java
+categories:
+  - Lecture
+  - Java
+  - RESTful
+  - Web Services 
+provide_notes: true
+provide_slides: true
+jupyter: java-lts
+echo: true
+output: true
+---
+
+## Informations techniques 
+
+:::: {layout="[ 0.5, -0.05, 0.45 ]"}
+::: {#first-column}
+{{< include ./quarto-utils/_tools_Git_Java.qmd >}}
+:::
+::: {#second-column}
+{{< include ./quarto-utils/_tools_Java_Java.qmd >}}
+:::
+::::
+
+## Exemples
+
+```{java}
+//| echo: false
+//| output: asis
+%%shell
+PROVIDER="github"
+REPO="ebpro/sample-jaxrs"
+BRANCH="develop"
+gitpull.sh --provider github \
+  --branch ${BRANCH} ${REPO} \
+  --message "Les exemples suivants sont accessibles dans le dépôt :"
+```
+
+```{java}
+//| echo: false
+//| output: false
+%%shell
+PROVIDER="github"
+REPO="ebpro/sample-jaxrs"
+BRANCH="develop"
+source get_src_dir.sh ${PROVIDER} ${REPO} 
+cd ${SRC_DIR}
+./mvnw --quiet verify
+```
+
+```{java}
+//| echo: false
+//| output: false
+//| error: true
+%jars "/home/jovyan/work/materials/github/ebpro/sample-jaxrs/target/sample-jaxrs-*-withdependencies.jar";
+import org.glassfish.grizzly.http.server.HttpServer;
+import fr.univtln.bruno.samples.jaxrs.server.BiblioServer;
+HttpServer httpServer = BiblioServer.startServer();
+httpServer.toString();
+```
+
+## Introduction aux Clients REST
+
+::: {.content-visible when-profile="slides"}
+- Un client REST est un **composant logiciel** qui :
+  - Interagit avec des APIs RESTful
+  - Envoie des requêtes HTTP
+  - Traite les réponses
+- En Java, **Jakarta RESTful Web Services** (JAX-RS) propose :
+  - Une API fluide
+  - Une approche élégante
+  - Un design moderne
+:::
+
+::: {.content-visible when-profile="notes"}
+Un client REST est un composant logiciel qui interagit avec des APIs RESTful. En Java, Jakarta RESTful Web Services (anciennement JAX-RS) fournit une API fluide pour construire des requêtes REST de manière élégante.
+:::
+
+## Types de Clients REST
+
+::: {.content-visible when-profile="slides"}
+- **Client HTTP natif**
+  - Simple, sans dépendances
+  - Intégré à Java
+  - Bas niveau
+
+- **Client Jakarta REST**
+  - API fluide moderne
+  - Support des standards
+  - Extensible
+
+- **Client REST asynchrone**
+  - Non bloquant
+  - Haute performance
+  - Réactif
+
+- **Client Quarkus**
+  - Déclaratif
+  - Cloud native
+  - Microservices
+:::
+
+::: {.content-visible when-profile="notes"}
+Il existe plusieurs approches pour implémenter un client REST en Java, chacune avec ses avantages et cas d'usage spécifiques :
+
+1. **Client HTTP natif** : Utilise l'API HTTP native de Java, idéal pour les cas simples
+2. **Client Jakarta REST** : Offre une API moderne et fluide, recommandé pour les applications enterprise
+3. **Client REST asynchrone** : Permet des opérations non bloquantes, parfait pour la haute performance
+4. **Client Quarkus** : Simplifie le développement de microservices avec une approche déclarative
+:::
+
+### Tableau comparatif 
+
+::: {.content-visible when-profile="slides"}
+| Type | Points forts | Points faibles |
+|------|--------------|----------------|
+| HTTP natif | Léger, standard | Verbeux, bas niveau |
+| Jakarta REST | Moderne, flexible | Configuration initiale |
+| Async | Performance, scalable | Complexité accrue |
+| Quarkus | Productif, intégré | Framework spécifique |
+:::
+
+### Client HTTP natif
+
+```java
+// filepath: /home/jovyan/work/local/02_java_rest_L_client.qmd
+try {
+    // Configuration de la connexion
+    URL url = new URL("http://localhost:9998/mylibrary");
+    HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+    conn.setRequestMethod("GET");
+    conn.setRequestProperty("Accept", "application/json");
+    
+    // Vérification du code de réponse
+    int responseCode = conn.getResponseCode();
+    if (responseCode == HttpURLConnection.HTTP_OK) {
+        // Lecture de la réponse
+        try (BufferedReader br = new BufferedReader(
+                new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
+            StringBuilder response = new StringBuilder();
+            String line;
+            while ((line = br.readLine()) != null) {
+                response.append(line);
+            }
+            System.out.println("Response: " + response.toString());
+        }
+    } else {
+        System.err.println("Error: " + responseCode);
+    }
+} catch (IOException e) {
+    e.printStackTrace();
+} finally {
+    if (conn != null) {
+        conn.disconnect();
+    }
+}
+```
+
+## Client Jakarta REST
+
+- Caractéristiques principales :
+  - API fluide et moderne
+  - Support natif JSON/XML
+  - Gestion automatique des ressources
+  - Extensible via filtres et intercepteurs
+- Support de la sérialisation JSON et XML :
+  - Jackson, MOXy, Jettison, etc.
+  - JAXB pour XML https://eclipse-ee4j.github.io/jersey.github.io/documentation/latest31x/client.html
+-
+
+### Classes fondamentales
+
+```java
+// 1. Client - Point d'entrée principal
+Client client = ClientBuilder.newBuilder()
+    .register(JacksonFeature.class)
+    .build();
+
+// 2. WebTarget - Représente une ressource REST
+WebTarget target = client.target("http://api.example.com")
+    .path("resources")
+    .path("{id}");
+
+// 3. Response - Contient la réponse HTTP
+Response response = target.request(MediaType.APPLICATION_JSON).get();
+```
+
+### Hiérarchie des classes principales
+
+1. **ClientBuilder**
+   - Factory pour créer des instances `Client`
+   - Configuration du client (timeout, features, providers)
+   - Patterns fluides pour la construction
+
+2. **Client**
+   - Interface principale pour les requêtes HTTP
+   - Gestion du cycle de vie
+   - Création de `WebTarget`
+
+3. **WebTarget**
+   - Représente une URI REST
+   - Construction fluide des URLs
+   - Gestion des paramètres et templates
+   - Création des requêtes
+
+4. **Response**
+   - Encapsule la réponse HTTP
+   - Accès aux headers et status
+   - Lecture du corps de la réponse
+   - Gestion des types génériques
+
+### Classes utilitaires importantes
+
+```java
+// Entity - Encapsulation des données envoyées
+Entity.entity(data, MediaType.APPLICATION_JSON)
+
+// MediaType - Types MIME supportés
+MediaType.APPLICATION_JSON
+MediaType.APPLICATION_XML
+
+// GenericType - Gestion des types génériques
+GenericType<List<Book>> listType = new GenericType<List<Book>>() {};
+```
+
+### Exceptions principales
+
+```java
+try {
+    // ProcessingException - Erreurs de communication
+    // WebApplicationException - Erreurs HTTP (4xx, 5xx)
+    // ResponseProcessingException - Erreurs de traitement
+} catch (ProcessingException e) {
+    // Erreur réseau ou I/O
+} catch (WebApplicationException e) {
+    // Erreur HTTP spécifique
+} catch (ResponseProcessingException e) {
+    // Erreur de désérialisation
+}
+```
+
+### Configuration Maven
+
+```{.java}
+%%loadFromPOM
+<dependency>
+    <groupId>org.glassfish.jersey.core</groupId>
+    <artifactId>jersey-client</artifactId>
+    <version>3.1.10</version>
+</dependency>
+<dependency>
+    <groupId>org.glassfish.jersey.media</groupId>
+    <artifactId>jersey-media-json-jackson</artifactId>
+    <version>3.1.10</version>
+</dependency>
+```
+
+###  `GET` basique
+
+```{java}
+//| echo: false
+//| output: false
+
+import org.glassfish.jersey.jackson.JacksonFeature;
+import fr.univtln.bruno.samples.jaxrs.model.Library.Author;
+import jakarta.ws.rs.ProcessingException;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.ClientBuilder;
+import jakarta.ws.rs.client.Entity;
+import jakarta.ws.rs.client.WebTarget;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+```
+
+```{java}
+//| echo: true
+//| output: true
+//| error: true
+        String token = "XXX-YYY-ZZZ";
+        String baseUrl = "http://localhost:9998/mylibrary";
+
+        try (Client client = ClientBuilder.newBuilder()
+                .register(JacksonFeature.class)
+                .build()) {
+
+            WebTarget baseTarget = client.target(baseUrl);
+
+            // Initialize library
+            try {
+                String initResponse = baseTarget.path("library/init")
+                    .request(MediaType.APPLICATION_JSON)
+                    .put(Entity.entity("", MediaType.TEXT_PLAIN), String.class);
+                System.out.println("Library initialized: " + initResponse);
+            } catch (WebApplicationException e) {
+                System.err.println("Failed to initialize library: " + e.getMessage());
+            }
+
+            // Get author
+            WebTarget authorTarget = baseTarget.path("authors/{id}");
+            try (Response response = authorTarget
+                    .resolveTemplate("id", "1")
+                    .request(MediaType.APPLICATION_JSON)
+                    .header("Authorization", "Bearer " + token)
+                    .get()) {
+
+                if (response.getStatus() == Response.Status.OK.getStatusCode()) {
+                    Author author = response.readEntity(Author.class);
+                    System.out.println("Author: " + author);
+                } else {
+                    String error = response.hasEntity() ? response.readEntity(String.class) : "Unknown error";
+                    System.err.printf("Error %d: %s%n", response.getStatus(), error);
+                }
+            }
+        } catch (ProcessingException e) {
+            System.err.println("Communication error: " + e.getMessage());
+        }
+```
+
+### `POST` avec entité
+
+```java
+Book newBook = new Book("Java REST", "John Doe");
+
+Response response = target.request(MediaType.APPLICATION_JSON)
+                         .post(Entity.entity(newBook, MediaType.APPLICATION_JSON));
+
+// Vérification de la création
+if (response.getStatus() == Response.Status.CREATED.getStatusCode()) {
+    URI location = response.getLocation();
+    System.out.println("Ressource créée à: " + location);
+}
+```
+
+## Un exemple de client REST
+
+La classe `fr.univtln.bruno.samples.jaxrs.client.BiblioClient` présente un client qui utilise l'API fluent cliente pour construire des requêtes REST en Java.
+
+```{java}
+//| output: true
+//| echo: false
+//| vscode: {languageId: java}
+// PRINT CLASS
+String script="/home/jovyan/work/src/github/ebpro/sample-jaxrs/src/main/java/fr/univtln/bruno/samples/jaxrs/client/BiblioClient.java";
+IJava.getKernelInstance().getMagics().applyCellMagic("javasrcClassByName",List.of("BiblioClient"),script);
+return null;
+```
+
+```{java}
+//| vscode: {languageId: java}
+%%shell 
+cd /home/jovyan/work/src/github/ebpro/sample-jaxrs
+mvn  -quiet -Dmain.class="fr.univtln.bruno.samples.jaxrs.client.BiblioClient" exec:java
+```
+
+```{java}
+//| output: false
+//| echo: false
+//| vscode: {languageId: java}
+httpServer.stop();
+```
+
+### Client REST asynchrone
+
+La programmation réactive avec les clients REST permet de gérer efficacement les opérations d'E/S non bloquantes, améliorant ainsi les performances des applications.
+
+- Principes clés
+
+  - **Non-blocking I/O** : Les opérations d'E/S n'immobilisent pas les threads
+  - **Back-pressure** : Contrôle du flux de données entre producteur et consommateur
+  - **Scalabilité** : Meilleure utilisation des ressources système
+  - **Résilience** : Gestion améliorée des erreurs et des timeouts
+
+### Quarkus REST Client
+
+Quarkus fournit un client REST déclaratif qui simplifie l'intégration avec les APIs REST. Pour l'utiliser, ajoutez la dépendance suivante :
+
+https://quarkus.io/guides/rest-client
+

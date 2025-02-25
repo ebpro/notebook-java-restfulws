@@ -1,0 +1,175 @@
+---
+title: "Paramètres et annotations JAX-RS"
+description: |
+  Gestion des paramètres dans les services REST Jakarta.
+  - Paramètres de chemin (@PathParam)
+  - Paramètres de requête (@QueryParam)
+  - Paramètres de formulaire (@FormParam)
+  - En-têtes HTTP (@HeaderParam)
+  - Corps de requête (@Consumes)
+  - Validation des paramètres
+categories:
+  - Java
+  - Lecture
+  - I211
+  - RESTful
+  - Web Services
+provide_notes: true
+provide_slides: false
+jupyter: java-lts
+execute: 
+  error: true
+---
+
+:::: {layout="[ 0.5, -0.05, 0.45 ]"}
+::: {#first-column}
+{{< include ./quarto-utils/_tools_Git_Java.qmd >}}
+:::
+::: {#second-column}
+{{< include ./quarto-utils/_tools_Java_Java.qmd >}}
+:::
+::::
+
+## Les paramètres complexes dans les corps de requêtes 
+
+Les conversions sont aussi automatiques dans l'autre sens quand des données (XML, JSON, ...) sont envoyées dans le corps d'une requête HTTP (par exemple PUT ou POT) pour être utilisée simplement comme un parametre Java de la méthode. Les méthodes qui nécessitent des paramètres sont annotées avec `@Consumes(type[, type, …])` pour indiquer les types mime supportés. 
+
+L'annotation `@Consummes` de la méthode `addAuthor()` ci-dessous indique ce qui est possible et l'entete http `Content-Type` de la requête ce qui est envoyé. Noter que l'Id n'est pas indiqué dans la requête mais que l'entité complète est retournée. 
+
+```{java}
+//| echo: false
+//| output: asis
+%%shell
+PROVIDER="github"
+REPO="ebpro/notebook-java-rest-sample-jakartarestfull"
+BRANCH="develop"
+gitpull.sh --provider github \
+  --branch ${BRANCH} ${REPO} \
+  --message "Les exemples suivants sont accessibles dans le dépôt :"
+```
+```{java}
+//| echo: false
+//| output: false
+%%shell
+PROVIDER="github"
+REPO="ebpro/notebook-java-rest-sample-jakartarestfull"
+BRANCH="develop"
+source get_src_dir.sh ${PROVIDER} ${REPO} 
+cd ${SRC_DIR}
+./mvnw --quiet verify
+```
+```{java}
+//| echo: false
+//| output: false
+
+String SRC_DIR="/home/jovyan/work/materials/github/ebpro/notebook-java-rest-sample-jakartarestfull";
+%jars "/home/jovyan/work/materials/github/ebpro/notebook-java-rest-sample-jakartarestfull/target/sample-jaxrs-*-withdependencies.jar";
+```
+
+
+```{java}
+//| output: false
+//| echo: false
+//| vscode: {languageId: java}
+import org.glassfish.grizzly.http.server.HttpServer;
+import fr.univtln.bruno.samples.jaxrs.server.BiblioServer;
+HttpServer httpServer = BiblioServer.startServer();
+httpServer.toString();
+```
+
+```{java}
+//| output: true
+//| echo: false
+//| vscode: {languageId: java}
+// PRINT CLASS
+String script="/home/jovyan/work/materials/github/ebpro/notebook-java-rest-sample-jakartarestfull/src/main/java/fr/univtln/bruno/samples/jaxrs/resources/AuthorResource.java";
+IJava.getKernelInstance().getMagics().applyCellMagic("javasrcMethodByName",List.of("AuthorResource","addAuthor"),script);
+return null;
+```
+
+Adds an author :
+
+```{java}
+//| vscode: {languageId: java}
+%%shell
+curl -s -i -H "Accept: application/json"  \
+  -H "Content-type: application/json"  \
+  -X POST \
+  -d '{"name":"John","firstname":"Smith","biography":"My life"}' \
+   http://localhost:9998/mylibrary/authors
+```
+
+La méthode `updateAuteur` est appelée par un PUT mais avec une resource précise (indiquée dans l'URL) à mettre à jour.
+
+```{java}
+//| output: true
+//| echo: false
+//| vscode: {languageId: java}
+// PRINT CLASS
+String script="/home/jovyan/work/materials/github/ebpro/notebook-java-rest-sample-jakartarestfull/src/main/java/fr/univtln/bruno/samples/jaxrs/resources/AuthorResource.java";
+IJava.getKernelInstance().getMagics().applyCellMagic("javasrcMethodByName",List.of("AuthorResource","updateAuthor"),script);
+return null;
+```
+
+Fully update an author
+
+```{java}
+//| vscode: {languageId: java}
+%%shell
+curl -s -i -H "Accept: application/json"  \
+  -H "Content-type: application/json"  \
+  -X PUT \
+  -d '{"name":"Martin","firstname":"Jean","biography":"ma vie"}' \
+  http://localhost:9998/mylibrary/authors/1
+```
+
+### La suppression
+La suppression des ressources se fait avec les approches précédentes.
+
+```{java}
+//| output: true
+//| echo: false
+//| vscode: {languageId: java}
+// PRINT CLASS
+String script="/home/jovyan/work/materials/github/ebpro/notebook-java-rest-sample-jakartarestfull/src/main/java/fr/univtln/bruno/samples/jaxrs/resources/AuthorResource.java";
+IJava.getKernelInstance().getMagics().applyCellMagic("javasrcMethodByName",List.of("AuthorResource","removeAuthor"),script);
+return null;
+```
+
+Removes one author :
+
+```{java}
+//| slideshow: {slide_type: skip}
+//| tags: []
+//| vscode: {languageId: java}
+%%shell
+curl -s -i -X DELETE \
+    http://localhost:9998/mylibrary/authors/1
+```
+
+```{java}
+//| output: true
+//| echo: false
+//| vscode: {languageId: java}
+// PRINT CLASS
+String script="/home/jovyan/work/materials/github/ebpro/notebook-java-rest-sample-jakartarestfull/src/main/java/fr/univtln/bruno/samples/jaxrs/resources/AuthorResource.java";
+IJava.getKernelInstance().getMagics().applyCellMagic("javasrcMethodByName",List.of("AuthorResource","removeAuthors"),script);
+return null;
+```
+
+Removes all authors
+
+```{java}
+//| vscode: {languageId: java}
+%%shell
+curl -s -i -X DELETE \
+    http://localhost:9998/mylibrary/authors/
+```
+
+```{java}
+//| output: false
+//| echo: false
+//| vscode: {languageId: java}
+httpServer.stop();
+```
+
