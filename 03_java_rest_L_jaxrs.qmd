@@ -30,10 +30,12 @@ execute:
 :::
 ::::
 
+::: {.content-visible when-profile="notes"}
 Java propose un standard appelé [Jakarta RESTful Web Services](https://jakarta.ee/specifications/restful-ws/3.1/jakarta-restful-ws-spec-3.1) pour construire efficacement des serveurs et des clients REST. 
 [Jersey](https://eclipse-ee4j.github.io/jersey/download.html) est l'implantation de référence. 
 
 Ce cours présente la version 3.1, la version actuelle de la spécification est la [4.0](https://jakarta.ee/specifications/restful-ws/4.0/jakarta-restful-ws-spec-4.0)
+:::
 
 ## Une application REST minimale
 

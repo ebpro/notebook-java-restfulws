@@ -1,6 +1,6 @@
 ---
 title: Exercices pratiques REST
-description: Découvrez les APIs REST avec cURL et Java
+description: Découvrez les APIs REST avec curl et Java
 categories:
   - Java
   - Exercices
@@ -8,32 +8,106 @@ categories:
   - Web Services 
 provide_notes: true
 provide_slides: false
-jupyter: java-lts
+jupyter: zsh
 ---
 
-## Exercice 1: Explorer les APIs REST avec cURL
+## Objectifs d'apprentissage
+
+À la fin de ce TP, vous devez être capable de :
+- Interroger des APIs REST avec différents outils
+- Comprendre et utiliser la documentation OpenAPI
+- Implémenter des clients REST en Java
+
+## Outils nécessaires
+
+- [curl](https://curl.se/) : un outil en ligne de commande pour transférer des données avec des URL
+- [jq](https://jqlang.org/) : un outil pour formater et filtrer des données JSON
+- [Postman](https://www.postman.com/downloads/) : un outil pour tester des APIs REST (optionnel).
+
+## curl - Options de base
+
+```bash
+# Verbosité et debug
+-v, --verbose     # Affiche les détails de la requête/réponse
+-s, --silent      # Mode silencieux, supprime la barre de progression
+
+# Méthodes HTTP
+-X POST          # Spécifie la méthode HTTP (GET, POST, PUT, DELETE...)
+-d, --data       # Envoie des données dans le corps de la requête
+
+# Headers et authentification
+-H, --header     # Ajoute un header personnalisé
+-u, --user       # Basic auth (username:password)
+
+# Format et données
+-i               # Inclut les headers dans la sortie
+```
+
+```bash
+# POST avec JSON et Bearer token
+curl -X POST \
+     -H "Content-Type: application/json" \
+     -H "Authorization: Bearer YOUR_TOKEN" \
+     -d '{"name":"John","age":30}' \
+     "https://api.example.com/users"
+```
+
+## Exercice 1: Explorer les APIs REST avec curl
 
 ### Requêtes basiques
 
-Découvrons l'API ISS (Station Spatiale Internationale) qui ne nécessite pas d'authentification.
+L'API ISS (Station Spatiale Internationale) ne nécessite pas d'authentification.
 http://open-notify.org/Open-Notify-API/ISS-Location-Now/
 
 #### Position actuelle de l'ISS
 
-```bash
+```zsh
+#| echo: true
+#| output: true
 curl -i http://api.open-notify.org/iss-now.json
 ```
 
 #### Astronautes dans l'espace
 
-```bash
+```zsh
+#| echo: true
+#| output: true
 curl -i "http://api.open-notify.org/astros.json"
+```
+
+## jq - Filtrer et formater JSON
+
+`jq` est un utilitaire en ligne de commande pour traiter du JSON. Il permet de filtrer, transformer et formater les données JSON de manière élégante.
+
+### Syntaxe de base
+
+```bash
+# Formatage simple
+curl -s "http://api.open-notify.org/iss-now.json" | jq '.'
+
+# Sélection de champs
+curl -s "http://api.open-notify.org/iss-now.json" | jq '.iss_position.latitude'
+```
+
+### Filtres avancés
+
+```zsh
+# Filtrer un tableau
+curl -s "http://api.open-notify.org/astros.json" | jq '.people[] | select(.craft=="ISS")'
+
+# Transformation de données
+curl -s "http://api.open-notify.org/astros.json" | \
+  jq '.people[] | {astronaut: .name, vessel: .craft}'
+
+# Comptage et statistiques
+curl -s "http://api.open-notify.org/astros.json" | \
+  jq '.people | group_by(.craft) | map({craft: .[0].craft, count: length})'
 ```
 
 ### Requêtes avec paramètres et authentification
 
 Il faut généralement ajouter des paramètres à une requête pour obtenir des informations spécifiques.
-En particulier, une authentificatyion sous la forme d'une clé API (token) est souvent nécessaire.
+En particulier, une authentification sous la forme d'une clé API (token) est souvent nécessaire.
 
 Créer un compte et obtenu un token pour https://openweathermap.org/appid#start puis https://home.openweathermap.org/api_keys 
 Puis faites des requêtes pour obtenir la météo d'une ville. Attention, cela prend du temps.
@@ -45,7 +119,7 @@ curl -s "https://api.openweathermap.org/data/2.5/weather?q=Toulon,fr&appid=$TOKE
 Le résultat est en JSON, pour le formater, on peut utiliser `jq`. 
 La commande `jq` permet de formater et filtrer des données JSON.
 
-Il est aussi possible d'utiliser des options cURL pour envoyer des paramètres.
+Il est aussi possible d'utiliser des options curl pour envoyer des paramètres.
 
 ```bash
 curl -v "https://api.openweathermap.org/data/2.5/weather" \
@@ -57,7 +131,7 @@ curl -v "https://api.openweathermap.org/data/2.5/weather" \
 
 ### Manipulation des headers et formats
 
-Pour spécifier le format de la réponse ou envoyer des headers spécifiques, on peut utiliser des options cURL.
+Pour spécifier le format de la réponse ou envoyer des headers spécifiques, on peut utiliser des options curl.
 
 ```bash
 # Demander du JSON
@@ -76,7 +150,7 @@ curl -v -H "Authorization: Bearer YOUR_TOKEN" "https://api.github.com/user"
 
 ### Exercices pratiques 
 
-1. Utilisez cURL pour explorer l'API OpenWeatherMap en pour afficher la méthode de plusieurs villes
+1. Utilisez curl pour explorer l'API OpenWeatherMap en pour afficher la météo de plusieurs villes
 2. Compléter le script shell suivant pour afficher la latitude et la longitude de l'ISS toutes les 30secondes.
   ```bash
   # Script pour suivre l'ISS
@@ -101,7 +175,6 @@ Elle permet aussi de générer de la documentation et des tests.
 1. Visitez https://petstore.swagger.io/
 2. Examinez la structure du document OpenAPI
 3. Testez les endpoints via l'interface Swagger UI
-
 
 ## Exercice 3. Client Java avec Jersey
 

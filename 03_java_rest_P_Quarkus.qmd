@@ -1,0 +1,269 @@
+---
+title: Développement d'une API REST avec Quarkus
+description: |
+  Développement d'une API REST avec Quarkus.
+  - Création d'endpoints REST basiques
+  - Manipulation de différents types de paramètres
+  - Intégration de la persistance avec Panache
+categories:
+  - Java
+  - Exercices
+  - RESTful
+  - Web Services 
+  - Quarkus
+  - Panache
+provide_notes: true
+provide_slides: false
+jupyter: zsh
+---
+
+## Objectifs
+
+Développer une API REST pour gérer un catalogue de produits, permettant de:
+
+1. Créer des endpoints REST basiques
+2. Manipuler différents types de paramètres
+3. Intégrer la persistance avec Panache
+
+## Présentation de Quarkus
+
+Quarkus est un framework Java innovant conçu pour le développement d'applications cloud-natives et serverless. Créé par Red Hat, il se distingue par son approche "container-first" et ses performances exceptionnelles, notamment un temps de démarrage ultra-rapide et une faible consommation mémoire. Quarkus utilise GraalVM pour la compilation native, permettant de créer des applications Java optimisées pour les environnements cloud. Il propose une expérience de développement moderne avec le hot reload, une configuration simplifiée et une excellente intégration avec les technologies cloud comme Kubernetes. Son architecture extensible via les extensions Quarkus facilite l'intégration de nombreuses bibliothèques et frameworks Java populaires (Hibernate, RESTEasy, etc.). Pour le développement d'APIs REST, Quarkus offre un modèle de programmation réactif et impératif, avec une excellente intégration de standards comme JAX-RS et des outils modernes comme Panache pour simplifier la persistance.
+
+En plus des libraires, Quarkus propose un outils en ligne de commande pour la création de projets, la gestion des dépendances, la compilation et l'exécution des applications. Il fournit également une interface de développement web (Dev UI) pour visualiser les métriques, les logs, les configurations et les endpoints de l'application. Cette outils gère les projets java avec Maven ou Gradle.
+
+Le démarrage est simple: https://quarkus.io/get-started/ et la documentation est très complète: https://quarkus.io/guides/
+
+## Partie 1: API REST basique
+
+### Configuration du projet
+
+```bash
+quarkus create app \
+    org.acme:product-catalog:1.0.0-SNAPSHOT \
+    --extension="io.quarkus:quarkus-hibernate-orm-rest-data-panache" \
+    --extension="io.quarkus:quarkus-jdbc-postgresql" \
+    --extension="io.quarkus:quarkus-rest-jackson" \
+    --gradle=false
+```
+
+Cette commande crée un projet Quarkus avec les extensions et options suivantes:
+
+- `quarkus-hibernate-orm-rest-data-panache`: pour la persistance des données avec Panache
+- `quarkus-jdbc-postgresql`: pour la connexion à une base de données PostgreSQL
+- `quarkus-rest-jackson`: pour la sérialisation/désérialisation JSON
+- `gradle=false`: pour utiliser Maven comme système de build
+
+entrez dans le répertoire du projet et ouvrez-le dans votre IDE préféré.
+
+### Première ressource REST
+
+Créez une classe `Product` pour représenter un produit (sku - Stock Keeping Unit (identifiant unique du produit) , nom, prix, stock) 
+et une classe `ProductResource` pour gérer les opérations CRUD sur les produits.
+
+```java
+package org.acme.model;
+
+import java.math.BigDecimal;
+
+public class Product {
+    private String sku;
+    private String name;
+    private BigDecimal price;
+    private int stock;
+    
+    // Constructeurs, getters, setters
+}
+```
+
+```java
+package org.acme.resource;
+
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import java.util.ArrayList;
+import java.util.List;
+
+@Path("/api/v1/products")
+@Produces(MediaType.APPLICATION_JSON)
+@Consumes(MediaType.APPLICATION_JSON)
+public class ProductResource {
+    private static List<Product> products = new ArrayList<>();
+    
+    @GET
+    public List<Product> getAllProducts() {
+        return products;
+    }
+    
+    @POST
+    public Response createProduct(Product product) {
+        products.add(product);
+        return Response.status(201).entity(product).build();
+    }
+}
+```
+
+Démarrez l'application avec la commande `./mvnw quarkus:dev` et accédez à l'URL `http://localhost:8080/api/v1/products` pour tester les endpoints.
+Vous pouvez utiliser un client REST comme Postman ou curl pour envoyer des requêtes POST et GET.
+
+I'll add a callout to suggest additional HTTP verbs and paths. Here's the Markdown/Quarto callout:
+
+::: {.callout-tip}
+## Exercice: Enrichissement de l'API REST
+En vous basant sur les bonnes pratiques REST vues en cours, ajoutez les endpoints suivants:
+
+- `POST /api/v1/products/init/{number}` pour créer `number` nouveaux produits de test.
+- `GET /api/v1/products/{sku}` pour récupérer un produit par son SKU
+- `PUT /api/v1/products/{sku}` pour mettre à jour un produit existant
+- `DELETE /api/v1/products/{sku}` pour supprimer un produit
+- `GET /api/v1/products?page=0&size=10` pour la pagination
+
+N'oubliez pas:
+- L'utilisation appropriée des codes HTTP de réponse
+- La validation des données d'entrée
+- La gestion des erreurs (produit non trouvé, données invalides, etc.)
+:::
+
+## Partie 2: Paramètres et recherche avancée
+
+### 2.1 Ajout des endpoints de recherche
+
+```java
+    @GET
+    @Path("/{sku}")
+    public Product getProduct(@PathParam("sku") String sku) {
+        return products.stream()
+                      .filter(p -> p.getSku().equals(sku))
+                      .findFirst()
+                      .orElseThrow(() -> new NotFoundException("Product not found"));
+    }
+
+    @GET
+    @Path("/search")
+    public List<Product> searchProducts(
+            @QueryParam("minPrice") BigDecimal minPrice,
+            @QueryParam("maxPrice") BigDecimal maxPrice,
+            @QueryParam("name") String name) {
+        return products.stream()
+                      .filter(p -> minPrice == null || p.getPrice().compareTo(minPrice) >= 0)
+                      .filter(p -> maxPrice == null || p.getPrice().compareTo(maxPrice) <= 0)
+                      .filter(p -> name == null || p.getName().contains(name))
+                      .toList();
+    }
+```
+
+## Partie 3: Intégration de Panache
+
+Panache est une extension Quarkus qui simplifie drastiquement la persistance des données en proposant une approche active record ou des repositories pour JPA/Hibernate. En étendant PanacheEntity ou en implémentant PanacheRepository, les développeurs obtiennent automatiquement un ensemble complet d'opérations CRUD et de méthodes de requêtage avec une syntaxe fluide et intuitive. Par exemple, `Person.findAll()` ou `Person.find("name", "John")` remplacent les traditionnelles requêtes JPA verbeuses. Panache offre deux modèles de programmation : l'approche active record où les entités contiennent leur logique de persistance, et l'approche repository qui sépare cette logique dans des classes dédiées. L'extension quarkus-hibernate-orm-rest-data-panache va encore plus loin en générant automatiquement une API REST CRUD complète à partir de vos entités, réduisant considérablement le code boilerplate nécessaire.
+
+### 3.1 Configuration de la base de données
+
+Ajoutez les propriétés suivantes dans le fichier `application.properties` pour configurer la connexion à une base de données PostgreSQL (à vous de créer la base de données PostgreSQL avec docker, adpattez les paramètres de connexion si besoin):
+
+```properties
+quarkus.datasource.db-kind=postgresql
+quarkus.datasource.username=postgres
+quarkus.datasource.password=postgres
+quarkus.datasource.jdbc.url=jdbc:postgresql://localhost:5432/products
+quarkus.hibernate-orm.database.generation=drop-and-create
+```
+
+Il ne sera plus nécessaire de configurer le persistence.xml, ni de créer des entity managers, Panache se charge de tout.
+
+Plus de détails sur la configuration de la base de données: https://quarkus.io/guides/datasource
+
+### 3.2 Entités et repository Panache
+
+Transformez la classe `Product` en une entité JPA.
+
+La classe suivante crée un repository Panache pour gérer les opérations de base de données en définissant des méthodes personnalisées associées à un ensemble de méthode génériques fournies par PanacheRepository.
+
+Le détail est expliqué ici : https://quarkus.io/guides/rest-data-panache#hr-hibernate-orm
+
+particulierement le repository pattern : https://quarkus.io/guides/hibernate-orm-panache#solution-2-using-the-repository-pattern
+
+```java
+package org.acme.repository
+
+import io.quarkus.hibernate.orm.panache.PanacheRepository;
+import io.quarkus.panache.common.Page;
+import jakarta.enterprise.context.ApplicationScoped;
+import java.math.BigDecimal;
+import java.util.List;
+import org.acme.entity.ProductEntity;
+
+@ApplicationScoped
+public class ProductRepository implements PanacheRepository<Product> {
+    
+    // Méthodes personnalisées
+    public List<ProductEntity> findByPriceRange(BigDecimal min, BigDecimal max) {
+        return find("price >= ?1 and price <= ?2", min, max).list();
+    }
+    
+    public List<ProductEntity> findInStock() {
+        return find("stock > 0").list();
+    }
+    
+    public List<ProductEntity> searchByName(String name, Page page) {
+        return find("name like ?1", "%" + name + "%")
+            .page(page)
+            .list();
+    }
+    
+    public ProductEntity findBySku(String sku) {
+        return find("sku", sku).firstResult();
+    }
+    
+    public List<ProductEntity> findByCategory(String categoryName) {
+        return find("category.name", categoryName).list();
+    }
+}
+```
+
+### Panache REST 
+
+Quarkus propose une extension `quarkus-hibernate-orm-rest-data-panache` qui permet de générer automatiquement une API REST CRUD complète à partir de vos entités. Cette approche, inspirée de Spring Data REST, réduit considérablement le code boilerplate en générant automatiquement les endpoints REST standards à partir de vos repositories Panache.
+
+En résumé, voici comment utiliser un repository Panache dans une ressource REST:
+
+```java
+package org.acme.resource;
+
+import io.quarkus.hibernate.orm.rest.data.panache.PanacheRepositoryResource;
+import io.quarkus.rest.data.panache.ResourceProperties;
+
+@ResourceProperties(path = "products", hal = true)
+public interface ProductResource extends PanacheRepositoryResource<ProductRepository, ProductEntity, Long> {
+    // Les endpoints CRUD sont automatiquement générés:
+    // GET /products
+    // GET /products/{id}
+    // POST /products
+    // PUT /products/{id}
+    // DELETE /products/{id}
+    // GET /products?page=0&size=20
+}
+```
+
+Cette simple interface génère automatiquement:
+- Une API REST complète avec les opérations CRUD
+- La pagination
+- Le support du format HAL pour l'hypermedia
+- La documentation OpenAPI
+- La validation des données
+- La gestion des erreurs
+
+Vous pouvez personnaliser le comportement par défaut avec des annotations comme `@MethodProperties` ou en implémentant vos propres méthodes.
+
+Le détail est expliqué ici : https://quarkus.io/guides/rest-data-panache
+
+## Points d'attention
+
+- Implémentation correcte des endpoints REST
+- Gestion appropriée des erreurs et codes HTTP
+- Validation des données
+- Documentation (OpenAPI/Swagger)
+
+## A VOUS DE JOUER
+
+Vous pouvez maintenant, créer un projet Quarkus, pour implanter un gestion de bibliothèque en reprenant vos entités précédentes.
+Vous pouvez aussi créer une implantation simplifiée votre projet hyperplanning.

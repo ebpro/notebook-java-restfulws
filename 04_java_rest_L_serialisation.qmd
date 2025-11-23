@@ -33,9 +33,45 @@ jupyter: java-lts
 :::
 ::::
 
-Les resources sont habituellement échangées en utilisant des langage de description standards comme [XML](https://www.w3.org/TR/xml11/) ou [JSON](https://www.ecma-international.org/publications-and-standards/standards/ecma-404/) (pour être précis JSON n'est pas vraiment un "standard" du web). Il est donc très courant de convertir des données vers et depuis Java. Pour cela, des API standards existent.
+## Formats d'échange de données
 
-## JAXB
+::: {.content-visible when-profile="slides"}
+### Standards d'échange {.incremental}
+- **XML** : Format historique et standardisé
+  - Standard W3C
+  - Extensible et flexible
+  - Supporte les namespaces
+
+- **JSON** : Format léger et moderne
+  - Simple et lisible
+  - Natif en JavaScript
+  - Standard de fait pour les APIs REST
+
+- **Autres formats**
+  - YAML : Configuration et données structurées
+  - Protocol Buffers : Format binaire efficace
+:::
+
+::: {.content-visible when-profile="notes"}
+Les services REST nécessitent l'échange de données entre client et serveur. Deux formats principaux dominent :
+
+1. **XML (eXtensible Markup Language)**
+   - Standard [W3C](https://www.w3.org/TR/xml11/)
+   - Format historique et très établi
+   - Riche en fonctionnalités mais verbeux
+
+2. **JSON (JavaScript Object Notation)**
+   - [Standard ECMA-404](https://www.ecma-international.org/publications-and-standards/standards/ecma-404/)
+   - Format léger et populaire
+   - Bien qu'initialement non standardisé pour le web, est devenu le format de facto
+
+Ces formats nécessitent des mécanismes de conversion (sérialisation/désérialisation) entre les objets Java et leur représentation textuelle. Pour cela, Java propose plusieurs APIs standards :
+- JAXB pour XML
+- Jackson ou JSON-B pour JSON
+:::
+
+## JAXB (Jakarta XML Binding)
+
 Nous allons voir maintenant une introduction rapide au mapping XML<->Java. La définition des formats de données XML se fait par annotation des entités en utilisant le standard [JAXB](https://jakarta.ee/specifications/xml-binding/3.0/jakarta-xml-binding-spec-3.0.html) (Java Architecture for XML Binding) : `@XmlElement`, `@XmlType`, `@XmlAttribute`, `@XmlTransient`, `@XmlValue`, ...
 
 Depuis Java 9, il est nécessaire d'ajouter les dépendances suivantes pour traiter des données XML avec JAXB : 

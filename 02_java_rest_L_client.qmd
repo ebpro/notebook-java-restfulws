@@ -81,25 +81,27 @@ Un client REST est un composant logiciel qui interagit avec des APIs RESTful. En
 ## Types de Clients REST
 
 ::: {.content-visible when-profile="slides"}
+::: {layout="[ 0.45, 0.1, 0.45 ]"}
+### Clients Java Standards {.column-left}
 - **Client HTTP natif**
   - Simple, sans dépendances
   - Intégré à Java
   - Bas niveau
-
 - **Client Jakarta REST**
   - API fluide moderne
   - Support des standards
   - Extensible
 
+### Clients Modernes {.column-right}
 - **Client REST asynchrone**
   - Non bloquant
   - Haute performance
   - Réactif
-
 - **Client Quarkus**
   - Déclaratif
   - Cloud native
   - Microservices
+:::
 :::
 
 ::: {.content-visible when-profile="notes"}
@@ -375,7 +377,7 @@ La programmation réactive avec les clients REST permet de gérer efficacement l
 
 ### Quarkus REST Client
 
-Quarkus fournit un client REST déclaratif qui simplifie l'intégration avec les APIs REST. Pour l'utiliser, ajoutez la dépendance suivante :
+Quarkus fournit un client REST déclaratif qui simplifie l'intégration avec les APIs REST. 
 
 https://quarkus.io/guides/rest-client
 

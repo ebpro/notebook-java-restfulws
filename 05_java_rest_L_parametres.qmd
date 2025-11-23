@@ -32,9 +32,9 @@ execute:
 
 ## Les paramètres complexes dans les corps de requêtes 
 
-Les conversions sont aussi automatiques dans l'autre sens quand des données (XML, JSON, ...) sont envoyées dans le corps d'une requête HTTP (par exemple PUT ou POT) pour être utilisée simplement comme un parametre Java de la méthode. Les méthodes qui nécessitent des paramètres sont annotées avec `@Consumes(type[, type, …])` pour indiquer les types mime supportés. 
+Jakarta REST facilite la manipulation des données complexes en automatisant la conversion entre les formats d'échange (JSON, XML) et les objets Java. Cette conversion bidirectionnelle s'applique particulièrement aux corps des requêtes HTTP (PUT, POST), où les données reçues sont automatiquement transformées en paramètres Java utilisables dans vos méthodes.
 
-L'annotation `@Consummes` de la méthode `addAuthor()` ci-dessous indique ce qui est possible et l'entete http `Content-Type` de la requête ce qui est envoyé. Noter que l'Id n'est pas indiqué dans la requête mais que l'entité complète est retournée. 
+L'annotation `@Consumes` joue un rôle central dans ce processus en spécifiant les types MIME acceptés par votre endpoint. Par exemple, dans la méthode `addAuthor()`, elle indique les formats acceptables pour la création d'un auteur. Le client précise le format effectivement utilisé via l'en-tête HTTP `Content-Type`, et le serveur retourne l'entité complète, y compris les champs générés comme l'ID.
 
 ```{java}
 //| echo: false
@@ -124,6 +124,7 @@ curl -s -i -H "Accept: application/json"  \
 ```
 
 ### La suppression
+
 La suppression des ressources se fait avec les approches précédentes.
 
 ```{java}
