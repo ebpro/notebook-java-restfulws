@@ -14,10 +14,10 @@ categories:
   - Jakarta EE
 
 metadata-files:
-  - quarto-utils/index-listing.yml
+  - _quarto-utils/index-listing.yml
 
 listing: true
 
-jupyter: java-lts
+jupyter: java
 ---
 

@@ -12,7 +12,7 @@ categories:
   - Sockets
 provide_notes: true
 provide_slides: true
-jupyter: java-lts
+jupyter: java
 echo: true
 output: true
 ---
@@ -51,10 +51,12 @@ Modèle TCP/IP
 
 ### Adresses IPv4
 
+:::: {.columns}
+::: {.column}
 - Historique
 - 32 bits divisés en 4 octets (x.x.x.x)
 - Plages d'adresses :
-  - Privées : 
+  - Privées :
     - 10.0.0.0/8
     - 172.16.0.0/12
     - 192.168.0.0/16
@@ -64,9 +66,10 @@ Modèle TCP/IP
     - 0.0.0.0 (any)
     - 255.255.255.255 (broadcast)
 - Plus d'adresses disponibles au niveau mondial
-
+:::
+::: {.column}
 ```{java}
-//| echo: true
+//| echo: false
 //| output: false
 import java.net.InetAddress;
 ```
@@ -75,14 +78,31 @@ import java.net.InetAddress;
 //| echo: true
 //| output: true
 // Exemple IPv4 en Java
-InetAddress ipv4 = InetAddress.getByName("192.168.1.1");
-System.out.println("Est locale ? " + ipv4.isLoopbackAddress());
-System.out.println("Est privée ? " + ipv4.isSiteLocalAddress());
+
+// How to get Hostname and IP Address
+String hostname = InetAddress.getLocalHost().getHostName();
+String ipAddress = InetAddress.getLocalHost().getHostAddress();
+
+System.out.println("Hostname: " + hostname);
+System.out.println("IP Address: " + ipAddress);
 ```
+
+```{java}
+//| echo: true
+//| output: true
+
+// Travailler avec une adresse IPv4 spécifique
+InetAddress ipv4 = InetAddress.getByName("192.168.1.1");
+
+System.out.println("Adresse loopback ? " + ipv4.isLoopbackAddress());
+System.out.println("Adresse privée ? " + ipv4.isSiteLocalAddress());
+```
+:::
+::::
 
 ### Adresse Format IPv6
 
-- Motivations: épuisement des adresses IPv4, sécurité, qualité de service, mobilité, auto-configuration, ... 
+- Motivations: épuisement des adresses IPv4, sécurité, qualité de service, mobilité, auto-configuration, ...
 - 128 bits divisés en 8 groupes de 16 bits (xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx)
 - Notation raccourcie : les zéros peuvent être omis (::1 pour localhost)
 
@@ -105,7 +125,7 @@ System.out.println("Est IPv6 ? " + (ipv6 instanceof Inet6Address));
 // Exemple de manipulation de sous-réseau
 NetworkInterface ni = NetworkInterface.getByName("eth0");
 for (InterfaceAddress ia : ni.getInterfaceAddresses()) {
-    System.out.printf("Adresse: %s/%d%n", 
+    System.out.printf("Adresse: %s/%d%n",
         ia.getAddress(),
         ia.getNetworkPrefixLength());
 }
@@ -153,7 +173,7 @@ try (ServerSocket socket = new ServerSocket(0)) { // 0 = port automatique
 
 ### Encapsulation des données
 
-```{java}
+```java
 //| echo: false
 //| output: true
 %%plantUML
@@ -167,11 +187,11 @@ rectangle "Encapsulation" {
   [Segment TCP\nPort src/dst] as TCP
   [Paquet IP\nIP src/dst] as IP
   [Trame Ethernet\nMAC src/dst] as ETH
-  
+
   HTTP -down-> TCP : encapsule
   TCP -down-> IP : encapsule
   IP -down-> ETH : encapsule
-  
+
   note right of HTTP : En-têtes + Data
   note right of TCP : Port 80, 443...
   note right of IP : IPv4/IPv6
@@ -182,7 +202,7 @@ rectangle "Encapsulation" {
 
 ## Exemple de topologie réseau
 
-```{java}
+```java
 //| echo: false
 //| output: true
 %%plantUML
@@ -275,7 +295,7 @@ Internet -- DNS
 
 ### Exemple de Communication
 
-```{java}
+```java
 //| echo: false
 //| output: true
 %%plantUML

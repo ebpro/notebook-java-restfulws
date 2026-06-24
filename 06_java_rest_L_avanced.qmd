@@ -16,21 +16,11 @@ categories:
   - Web Services
 provide_notes: true
 provide_slides: false
-jupyter: java-lts
+jupyter: java
 
-execute: 
+execute:
   error: true
-
 ---
-
-:::: {layout="[ 0.5, -0.05, 0.45 ]"}
-::: {#first-column}
-{{< include ./quarto-utils/_tools_Git_Java.qmd >}}
-:::
-::: {#second-column}
-{{< include ./quarto-utils/_tools_Java_Java.qmd >}}
-:::
-::::
 
 ```{java}
 //| echo: false
@@ -50,7 +40,7 @@ gitpull.sh --provider github \
 PROVIDER="github"
 REPO="ebpro/notebook-java-rest-sample-jakartarestfull"
 BRANCH="develop"
-source get_src_dir.sh ${PROVIDER} ${REPO} 
+source get_src_dir.sh ${PROVIDER} ${REPO}
 cd ${SRC_DIR}
 ./mvnw --quiet verify
 ```
@@ -86,7 +76,7 @@ Link: <http://MyServer:8080/MyApp/Persons/1>; rel="first-person", <http://MyServ
 D'une façon générale une classe annotée par `@Provider` ajoute des fonctions à JAXRS (traitement des exceptions, conversion des données, ...).
 
 #### Les mappers : application aux exceptions
-Le traitement des exceptions peut être simplifié en utilisant des mappers (cf. package exceptions et mapper) qui s'appliquent automatiquement lors qu'une exception est émise. Dans ce cas un objet Response est construit manuellement pour contrôler le détail du corps et de l'entête. 
+Le traitement des exceptions peut être simplifié en utilisant des mappers (cf. package exceptions et mapper) qui s'appliquent automatiquement lors qu'une exception est émise. Dans ce cas un objet Response est construit manuellement pour contrôler le détail du corps et de l'entête.
 
 ```{java}
 //| output: true
@@ -143,7 +133,7 @@ Un exemple de filtre appliqué à la requête sera donné dans la partie sur la 
 ## Schéma d'une API REST
 
   * [WSDL](https://www.w3.org/TR/wsdl/) un autre langage de service Web permet de décrire un tel [schéma](https://www.ibm.com/developerworks/webservices/library/ws-restwsdl/).
-  * Le langage [WADL](https://www.w3.org/Submission/wadl/) est spécifique à REST. 
+  * Le langage [WADL](https://www.w3.org/Submission/wadl/) est spécifique à REST.
   * Par défaut Jersey génére une description WADL `/application.wadl`
   * Cependant, pour cela l'application nécessite une implantation du standard pour traiter les documents XML appelé [JAXB](https://eclipse-ee4j.github.io/jaxb-ri/) qui n'est plus fournie en standard dans le JDK depuis la version 8 (nous utilisons ici la version 15).
 

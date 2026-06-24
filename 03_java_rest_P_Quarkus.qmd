@@ -9,7 +9,7 @@ categories:
   - Java
   - Exercices
   - RESTful
-  - Web Services 
+  - Web Services
   - Quarkus
   - Panache
 provide_notes: true
@@ -32,6 +32,42 @@ Quarkus est un framework Java innovant conçu pour le développement d'applicati
 En plus des libraires, Quarkus propose un outils en ligne de commande pour la création de projets, la gestion des dépendances, la compilation et l'exécution des applications. Il fournit également une interface de développement web (Dev UI) pour visualiser les métriques, les logs, les configurations et les endpoints de l'application. Cette outils gère les projets java avec Maven ou Gradle.
 
 Le démarrage est simple: https://quarkus.io/get-started/ et la documentation est très complète: https://quarkus.io/guides/
+
+
+```bash
+quarkus create app --maven --java=21 --wrapper --no-code --no-dockerfiles \
+    org.acme:product-catalog:1.0.0-SNAPSHOT \
+    --extension="quarkus-jdbc-postgresql" \
+    --extension="quarkus-hibernate-orm-rest-data-panache" \
+    --extension="resteasy-jackson" \
+    --extension="quarkus-smallrye-openapi" \
+    --extension="quarkus-smallrye-health"
+```
+
+```console
+src/main/java/com/example
+ ├─ domain
+ │    └─ Product.java             # Modèle métier (règles liées au produit lui-même)
+ ├─ persistence
+ │    ├─ ProductEntity.java       # Représentation base de données (JPA)
+ │    └─ ProductRepository.java   # Accès aux données (CRUD, requêtes)
+ ├─ service
+ │    └─ ProductService.java      # Cas d’usage métier (orchestration + règles globales)
+ ├─ api
+ │    └─ ProductResource.java     # API REST (HTTP / JSON)
+ └─ dto
+      └─ ProductDTO.java          # Objets échangés avec l’API
+```
+
+Domain = "Qu’est-ce qu’un produit et comment il se comporte ?" : Règles métier liées à l’objet
+Repository = "Comment je stocke ?" : En mémoire, fichier, base de données (JDBC, JPA, ...)
+Service = "Comment faire ? est-ce que j’ai le droit ?" : Règles métier, validation, orchestration
+API (Resource) = "Comment j’expose ça au monde extérieur ?" : HTTP, REST, JSON
+
+```bash
+mkdir -p src/main/java/org/acme/{domain,persistence,service,api,dto}
+```
+
 
 ## Partie 1: API REST basique
 
@@ -57,48 +93,113 @@ entrez dans le répertoire du projet et ouvrez-le dans votre IDE préféré.
 
 ### Première ressource REST
 
-Créez une classe `Product` pour représenter un produit (sku - Stock Keeping Unit (identifiant unique du produit) , nom, prix, stock) 
-et une classe `ProductResource` pour gérer les opérations CRUD sur les produits.
+Créez une classe `Product` pour représenter un produit (sku - Stock Keeping Unit (identifiant unique du produit) , nom, prix, stock)
 
 ```java
-package org.acme.model;
+package org.acme.domain;
 
 import java.math.BigDecimal;
 
-public class Product {
-    private String sku;
-    private String name;
-    private BigDecimal price;
-    private int stock;
-    
-    // Constructeurs, getters, setters
+/**
+ * Product métier immuable avec factory et méthodes withX pour mise à jour
+ * fonctionnelle
+ */
+public record Product(String sku, String name, BigDecimal price, int stock) {
+
+    // Factory method pour validation
+    public static Product of(String sku, String name, BigDecimal price, int stock) {
+        if (sku == null || sku.isBlank()) {
+            throw new IllegalArgumentException("SKU cannot be null or empty");
+        }
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException("Name cannot be null or empty");
+        }
+        if (price == null || price.compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException("Price cannot be null or negative");
+        }
+        if (stock < 0) {
+            throw new IllegalArgumentException("Stock cannot be negative");
+        }
+        return new Product(sku, name, price, stock);
+    }
+
+    // Méthodes withX pour “modifier” l’objet de manière immuable
+    public Product withName(String newName) {
+        return Product.of(this.sku, newName, this.price, this.stock);
+    }
+
+    public Product withPrice(BigDecimal newPrice) {
+        return Product.of(this.sku, this.name, newPrice, this.stock);
+    }
+
+    public Product withStock(int newStock) {
+        return Product.of(this.sku, this.name, this.price, newStock);
+    }
+
+    // Méthodes métier
+    public boolean isInStock() {
+        return stock > 0;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("Product[sku=%s, name=%s, price=%s, stock=%d]",
+                sku, name, price, stock);
+    }
 }
 ```
 
-```java
-package org.acme.resource;
+et une classe `ProductResource` pour gérer les opérations CRUD sur les produits.
 
+```java
+package org.acme.api;
+
+import org.acme.model.Product;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
+/**
+ * Resource REST minimale pour Product
+ * - GET all
+ * - POST create
+ */
 @Path("/api/v1/products")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-public class ProductResource {
-    private static List<Product> products = new ArrayList<>();
-    
+public class ProductResourceV1 {
+
+    // Stockage en mémoire pour la démo V1
+    private static final List<Product> products = new ArrayList<>();
+
+    /**
+     * GET /api/v1/products
+     */
     @GET
     public List<Product> getAllProducts() {
         return products;
     }
-    
+
+    /**
+     * POST /api/v1/products
+     */
     @POST
     public Response createProduct(Product product) {
+        // Vérification SKU unique
+        Optional<Product> existing = products.stream()
+                .filter(p -> p.sku().equals(product.sku()))
+                .findFirst();
+        if (existing.isPresent()) {
+            return Response.status(Response.Status.CONFLICT)
+                    .entity("Product with this SKU already exists").build();
+        }
+
         products.add(product);
-        return Response.status(201).entity(product).build();
+        return Response.status(Response.Status.CREATED).entity(product).build();
     }
 }
 ```
@@ -106,51 +207,343 @@ public class ProductResource {
 Démarrez l'application avec la commande `./mvnw quarkus:dev` et accédez à l'URL `http://localhost:8080/api/v1/products` pour tester les endpoints.
 Vous pouvez utiliser un client REST comme Postman ou curl pour envoyer des requêtes POST et GET.
 
-I'll add a callout to suggest additional HTTP verbs and paths. Here's the Markdown/Quarto callout:
+```bash
+curl -iX GET http://localhost:8080/api/v1/products
+
+curl -iX POST http://localhost:8080/api/v1/products \
+     -H "Content-Type: application/json" \
+     -d '{"sku":"SKU1","name":"Laptop","price":1000,"stock":10}'
+```
 
 ::: {.callout-tip}
-## Exercice: Enrichissement de l'API REST
-En vous basant sur les bonnes pratiques REST vues en cours, ajoutez les endpoints suivants:
+## Exercice : Enrichissement de l'API REST — Version v2 (M1)
 
-- `POST /api/v1/products/init/{number}` pour créer `number` nouveaux produits de test.
-- `GET /api/v1/products/{sku}` pour récupérer un produit par son SKU
-- `PUT /api/v1/products/{sku}` pour mettre à jour un produit existant
-- `DELETE /api/v1/products/{sku}` pour supprimer un produit
-- `GET /api/v1/products?page=0&size=10` pour la pagination
+Dans une nouvelle Resource `ProductResourceV2` associée au path `/api/v2/products`, complétez l’API pour gérer les produits en mémoire.
 
-N'oubliez pas:
-- L'utilisation appropriée des codes HTTP de réponse
-- La validation des données d'entrée
-- La gestion des erreurs (produit non trouvé, données invalides, etc.)
+### Endpoints à implémenter
+
+- `GET /api/v2/products`
+  → Récupère tous les produits existants.
+  💡 *Tip : pas besoin d’exception ici, renvoyez simplement une liste vide si aucun produit n’est présent.*
+
+- `GET /api/v2/products/{sku}`
+  → Récupère un produit spécifique par son SKU.
+  → Retournez **404 Not Found** si le produit n’existe pas.
+  💡 *Astuce : utilisez `jakarta.ws.rs.NotFoundException` pour renvoyer automatiquement 404.*
+
+- `POST /api/v2/products`
+  → Ajoute un nouveau produit.
+  → Vérifiez que le SKU est unique et retournez **409 Conflict** si le produit existe déjà.
+  → Retournez **201 Created** si l’ajout est réussi.
+  💡 *Astuce : utilisez `jakarta.ws.rs.ConflictException` pour gérer le conflit de SKU.*
+  💡 *Tip : assurez-vous de valider les champs métier (SKU non vide, stock >= 0, prix >= 0).*
+
+- `DELETE /api/v2/products/{sku}`
+  → Supprime un produit existant.
+  → Retournez **204 No Content** si la suppression est réussie et **404 Not Found** si le produit n’existe pas.
+  💡 *Astuce : utilisez `NotFoundException` pour gérer les SKU inexistants.*
+
+### Points à respecter
+
+- Conservez l’immutabilité du record `ProductV2`.
+- Validez les données d’entrée côté métier (SKU non vide, stock >= 0, prix >= 0).
+- Utilisez les codes HTTP appropriés pour chaque situation.
+- Testez vos endpoints avec `curl -i` ou Postman pour vérifier les headers et les codes HTTP.
+- 💡 *Bonus pédagogique : utilisez `Optional` et les méthodes fonctionnelles (`stream().findFirst().orElseThrow(...)`) pour gérer la recherche des produits par SKU.*
+- 💡 *Tip : structurer votre code pour que la logique métier reste séparée de la logique REST, même en mémoire, facilite la transition vers JPA/Panache plus tard.*
 :::
 
-## Partie 2: Paramètres et recherche avancée
 
-### 2.1 Ajout des endpoints de recherche
+Le fichier `products.http` contient des exemples de requêtes HTTP pour tester votre API.
+Vous pouvez aussi utiliser les commandes `curl` ou les plugins REST de votre IDE (comme REST Client pour VSCode).
+
+
+## Partie 2: Connexion des entités avec JPA
+
+### 2.1 Entité JPA
+
+Créez une entité JPA `ProductEntity` pour représenter un produit dans la base de données.
 
 ```java
-    @GET
-    @Path("/{sku}")
-    public Product getProduct(@PathParam("sku") String sku) {
-        return products.stream()
-                      .filter(p -> p.getSku().equals(sku))
-                      .findFirst()
-                      .orElseThrow(() -> new NotFoundException("Product not found"));
+package org.acme.persistence;
+
+import jakarta.persistence.*;
+import java.math.BigDecimal;
+
+@Entity
+@Table(name = "products")
+public class ProductEntity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(unique = true, nullable = false)
+    private String sku;
+
+    @Column(nullable = false)
+    private String name;
+
+    @Column(nullable = false)
+    private BigDecimal price;
+
+    @Column(nullable = false)
+    private int stock;
+
+    // Constructeurs
+    public ProductEntity() {
     }
 
-    @GET
-    @Path("/search")
-    public List<Product> searchProducts(
-            @QueryParam("minPrice") BigDecimal minPrice,
-            @QueryParam("maxPrice") BigDecimal maxPrice,
-            @QueryParam("name") String name) {
-        return products.stream()
-                      .filter(p -> minPrice == null || p.getPrice().compareTo(minPrice) >= 0)
-                      .filter(p -> maxPrice == null || p.getPrice().compareTo(maxPrice) <= 0)
-                      .filter(p -> name == null || p.getName().contains(name))
-                      .toList();
+    public ProductEntity(String sku, String name, BigDecimal price, int stock) {
+        this.sku = sku;
+        this.name = name;
+        this.price = price;
+        this.stock = stock;
     }
+
+    // Getters / Setters
+    public Long getId() {
+        return id;
+    }
+
+    public String getSku() {
+        return sku;
+    }
+
+    public void setSku(String sku) {
+        this.sku = sku;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public BigDecimal getPrice() {
+        return price;
+    }
+
+    public void setPrice(BigDecimal price) {
+        this.price = price;
+    }
+
+    public int getStock() {
+        return stock;
+    }
+
+    public void setStock(int stock) {
+        this.stock = stock;
+    }
+}
 ```
+
+Créez un repository JPA `ProductRepository` pour gérer les opérations de base de données.
+
+```java
+package org.acme.persistence;
+
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import java.util.List;
+
+@ApplicationScoped
+public class ProductRepository {
+
+    @PersistenceContext
+    private EntityManager em;
+
+    public ProductEntity save(ProductEntity product) {
+        em.persist(product);
+        return product;
+    }
+
+    public List<ProductEntity> findAll() {
+        return em.createQuery("SELECT p FROM ProductEntity p", ProductEntity.class)
+                 .getResultList();
+    }
+
+    public ProductEntity findBySku(String sku) {
+        return em.createQuery("SELECT p FROM ProductEntity p WHERE p.sku = :sku", ProductEntity.class)
+                 .setParameter("sku", sku)
+                 .getResultStream()
+                 .findFirst()
+                 .orElse(null);
+    }
+
+    public void delete(ProductEntity product) {
+        if (em.contains(product)) {
+            em.remove(product);
+        } else {
+            em.remove(em.merge(product));
+        }
+    }
+}
+```
+
+Il est très important de distinguer :
+
+- les contraintes métier : Objets métiers (Domain) qui contiennent les règles liées à l’objet lui-même.
+- les techniques de persistance : Objets JPA (Entities) et Repository qui gèrent la sauvegarde et la récupération des données.
+- les règles globales : Services qui orchestrent les opérations métier et de persistance. Mais indépendamment des détails de stockage.
+
+Supposez que l'on veuille changer la persistance d'une base de données relationnelle vers une base NoSQL, on ne devrait pas avoir à modifier les objets métiers ni la logique métier dans les services.
+
+
+Nous allons donc introduire une couche de service `ProductService` pour orchestrer les opérations métier.
+
+```java
+package org.acme.service;
+
+import org.acme.persistence.ProductRepository;
+import org.acme.persistence.ProductEntity;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Response;
+
+import java.util.List;
+
+@ApplicationScoped
+public class ProductService {
+
+    private final ProductRepository repository;
+
+    public ProductService(ProductRepository repository) {
+        this.repository = repository;
+    }
+
+    public List<ProductEntity> getAll() {
+        return repository.findAll();
+    }
+
+    public ProductEntity getBySku(String sku) {
+        ProductEntity p = repository.findBySku(sku);
+        if (p == null) {
+            throw new NotFoundException("Product not found");
+        }
+        return p;
+    }
+
+    public ProductEntity create(ProductEntity product) {
+        if (repository.findBySku(product.getSku()) != null) {
+            throw new WebApplicationException("Product with this SKU already exists", Response.Status.CONFLICT);
+        }
+        return repository.save(product);
+    }
+
+    public void delete(String sku) {
+        ProductEntity p = repository.findBySku(sku);
+        if (p == null) {
+            throw new NotFoundException("Product not found");
+        }
+        repository.delete(p);
+    }
+}
+```
+
+```bash
+# GET tous les produits (liste vide au démarrage)
+curl -iX GET http://localhost:8080/api/v3/products
+
+# POST pour créer un nouveau produit
+curl -iX POST http://localhost:8080/api/v3/products \
+     -H "Content-Type: application/json" \
+     -d '{"sku":"SKU1","name":"Laptop","price":1000,"stock":10}'
+
+# POST avec SKU existant (devrait renvoyer 409 Conflict)
+curl -iX POST http://localhost:8080/api/v3/products \
+     -H "Content-Type: application/json" \
+     -d '{"sku":"SKU1","name":"Laptop 2","price":1200,"stock":5}'
+
+# GET produit par SKU
+curl -iX GET http://localhost:8080/api/v3/products/SKU1
+
+# GET produit inexistant (devrait renvoyer 404)
+curl -iX GET http://localhost:8080/api/v3/products/SKU999
+
+# DELETE produit existant
+curl -iX DELETE http://localhost:8080/api/v3/products/SKU1
+
+# DELETE produit inexistant (devrait renvoyer 404)
+curl -iX DELETE http://localhost:8080/api/v3/products/SKU999
+```
+
+## Partie 3 (Optionnel) : Version V4 avec DTOs et mapping
+
+Dans les versions précédentes (V1 → V3), notre API exposait directement les **entités JPA**.
+Si cela fonctionne pour une petite application ou un prototype, ce n’est pas idéal pour un projet évolutif :
+
+- **Couplage fort entre API et base de données** : tout changement dans l’entité JPA impacte directement l’API.
+- **Exposition de détails internes** : certains champs de l’entité ne devraient pas être envoyés à l’utilisateur.
+- **Difficulté à appliquer des règles métier indépendamment du stockage**.
+
+Pour répondre à ces besoins, on introduit les **DTOs (Data Transfer Objects)**.
+
+Un DTO est un objet **simple, immuable et orienté API**, qui contient uniquement les données que l’on souhaite exposer.
+Il peut être utilisé en entrée (requêtes) et en sortie (réponses) de l’API.
+
+```java
+// DTO exposé par l'API
+public record ProductDTO(String sku, String name, BigDecimal price, int stock) { }
+
+// DTO utilisé pour créer un produit
+public record CreateProductRequest(String sku, String name, BigDecimal price, int stock) { }
+````
+
+* `ProductDTO` est retourné par les endpoints GET.
+* `CreateProductRequest` est reçu par les endpoints POST.
+* Les DTOs ne contiennent **aucune logique métier ni référence à la base**.
+
+On appelle mapping, l'action de transformer :
+
+    * Une **entité JPA** → un **DTO** pour l’API
+    * Un **DTO reçu** → une **entité JPA** pour la persistance
+
+Dans la version propre (V4), le mapping est réalisé **dans le Service** :
+
+* La Resource REST reste **simple et centrée sur HTTP**.
+* Le Service gère :
+
+  * Les règles métier globales (SKU unique, validation, existence).
+  * Le mapping Entity ↔ DTO.
+  * La persistance via le Repository.
+
+Exemple :
+
+```java
+private ProductDTO toDTO(ProductEntity entity) {
+    return new ProductDTO(
+        entity.getSku(),
+        entity.getName(),
+        entity.getPrice(),
+        entity.getStock()
+    );
+}
+```
+
+***Flux de données V4***
+
+1. Le client envoie un `CreateProductRequest` via POST.
+2. La **Resource V4** transmet la requête au **Service V4**.
+3. Le **Service V4** :
+
+   * Vérifie les règles métier.
+   * Crée une `ProductEntity` à partir du DTO.
+   * Sauvegarde via le Repository.
+   * Retourne un `ProductDTO` à la Resource.
+4. La Resource renvoie le DTO au client.
+
+Avec la V4, on peut facilement :
+
+- Faire évoluer l’API sans impacter la base de données.
+- Appliquer des règles métier indépendamment du stockage.
+- Contrôler précisément les données exposées via les DTOs.
+
+Mais cela ajoute un peu de code boilerplate pour le mapping. Comme c'est très classique, il existe des bibliothèques comme MapStruct pour automatiser ce mapping.
 
 ## Partie 3: Intégration de Panache
 
@@ -160,11 +553,23 @@ Panache est une extension Quarkus qui simplifie drastiquement la persistance des
 
 Ajoutez les propriétés suivantes dans le fichier `application.properties` pour configurer la connexion à une base de données PostgreSQL (à vous de créer la base de données PostgreSQL avec docker, adpattez les paramètres de connexion si besoin):
 
+```bash
+docker run -d \
+  --name postgres-tpjparest \
+  -e POSTGRES_USER=tpuser \
+  -e POSTGRES_PASSWORD="Tp@2026" \
+  -e POSTGRES_DB=products \
+  -p 15432:5432 \
+  -v postgres-tpjparest-data:/var/lib/postgresql/data \
+  --restart unless-stopped \
+  postgres:16
+```
+
 ```properties
 quarkus.datasource.db-kind=postgresql
-quarkus.datasource.username=postgres
-quarkus.datasource.password=postgres
-quarkus.datasource.jdbc.url=jdbc:postgresql://localhost:5432/products
+quarkus.datasource.username=tpuser
+quarkus.datasource.password="Tp@2026!"
+quarkus.datasource.jdbc.url=jdbc:postgresql://localhost:15432/products
 quarkus.hibernate-orm.database.generation=drop-and-create
 ```
 
@@ -194,33 +599,33 @@ import org.acme.entity.ProductEntity;
 
 @ApplicationScoped
 public class ProductRepository implements PanacheRepository<Product> {
-    
+
     // Méthodes personnalisées
     public List<ProductEntity> findByPriceRange(BigDecimal min, BigDecimal max) {
         return find("price >= ?1 and price <= ?2", min, max).list();
     }
-    
+
     public List<ProductEntity> findInStock() {
         return find("stock > 0").list();
     }
-    
+
     public List<ProductEntity> searchByName(String name, Page page) {
         return find("name like ?1", "%" + name + "%")
             .page(page)
             .list();
     }
-    
+
     public ProductEntity findBySku(String sku) {
         return find("sku", sku).firstResult();
     }
-    
+
     public List<ProductEntity> findByCategory(String categoryName) {
         return find("category.name", categoryName).list();
     }
 }
 ```
 
-### Panache REST 
+### Panache REST
 
 Quarkus propose une extension `quarkus-hibernate-orm-rest-data-panache` qui permet de générer automatiquement une API REST CRUD complète à partir de vos entités. Cette approche, inspirée de Spring Data REST, réduit considérablement le code boilerplate en générant automatiquement les endpoints REST standards à partir de vos repositories Panache.
 
@@ -263,7 +668,10 @@ Le détail est expliqué ici : https://quarkus.io/guides/rest-data-panache
 - Validation des données
 - Documentation (OpenAPI/Swagger)
 
-## A VOUS DE JOUER
 
-Vous pouvez maintenant, créer un projet Quarkus, pour implanter un gestion de bibliothèque en reprenant vos entités précédentes.
-Vous pouvez aussi créer une implantation simplifiée votre projet hyperplanning.
+
+## Conteneurs
+
+JIB
+
+ ./mvnw install -Dquarkus.container-image.build=true

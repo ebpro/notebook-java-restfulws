@@ -13,3 +13,5 @@ local.db
 *_files/
 _output/
 _freeze
+
+**/*.quarto_ipynb

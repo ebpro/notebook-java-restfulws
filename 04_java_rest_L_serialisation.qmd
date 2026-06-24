@@ -21,17 +21,10 @@ categories:
   - Jackson
 provide_notes: true
 provide_slides: false
-jupyter: java-lts
+jupyter: java
 ---
 
-:::: {layout="[ 0.5, -0.05, 0.45 ]"}
-::: {#first-column}
-{{< include ./quarto-utils/_tools_Git_Java.qmd >}}
-:::
-::: {#second-column}
-{{< include ./quarto-utils/_tools_Java_Java.qmd >}}
-:::
-::::
+
 
 ## Formats d'échange de données
 
@@ -74,13 +67,13 @@ Ces formats nécessitent des mécanismes de conversion (sérialisation/déséria
 
 Nous allons voir maintenant une introduction rapide au mapping XML<->Java. La définition des formats de données XML se fait par annotation des entités en utilisant le standard [JAXB](https://jakarta.ee/specifications/xml-binding/3.0/jakarta-xml-binding-spec-3.0.html) (Java Architecture for XML Binding) : `@XmlElement`, `@XmlType`, `@XmlAttribute`, `@XmlTransient`, `@XmlValue`, ...
 
-Depuis Java 9, il est nécessaire d'ajouter les dépendances suivantes pour traiter des données XML avec JAXB : 
+Depuis Java 9, il est nécessaire d'ajouter les dépendances suivantes pour traiter des données XML avec JAXB :
 
 ```{java}
 //| vscode: {languageId: java}
 %%loadFromPOM
 <dependency>
-  <groupId>jakarta.xml.bind</groupId> 
+  <groupId>jakarta.xml.bind</groupId>
   <artifactId>jakarta.xml.bind-api</artifactId>
   <version>3.0.0</version>
 </dependency>
@@ -99,9 +92,9 @@ Attention, un constructeur sans paramètre (au maximum `protected`) est obligato
 
 Dans le cas d'une collection `@XmlElementWrapper` permet d'ajouter un élément parent au contenu et `@XmlElements` contrôle le type des éléments en fonction du type réel Java. Pour des primitifs `@XmlList` permet de générer des listes avec un espace comme séparateur.
 
-`@XmlType` est similaire à `@XmlRootElement` si la classe ne doit apparitre que comme un sous-élément. 
+`@XmlType` est similaire à `@XmlRootElement` si la classe ne doit apparitre que comme un sous-élément.
 
-`@XmlValue` ne peut être utilisée que sur une seule propriété dont la valeur sera alors le contenu de l'élément (sans élément parent). 
+`@XmlValue` ne peut être utilisée que sur une seule propriété dont la valeur sera alors le contenu de l'élément (sans élément parent).
 
 ```{java}
 //| output: false
@@ -125,38 +118,38 @@ public class Task {
 
    @XmlElement(name="status")
    private State state=State.OPENED;
-   
+
    @XmlTransient
    private int age = -1;
-        
+
    @XmlElementWrapper(name="tags")
    @XmlElements({@XmlElement(name="tag",type=String.class)})
-   private List<String> tags; 
-    
-   private Description description = new Description(); 
-    
-   protected Task() {} 
+   private List<String> tags;
+
+   private Description description = new Description();
+
+   protected Task() {}
    public Task(long id, String title, State state, List<String> tags) {
        this.id=id; this.title=title; this.state=state; this.tags = tags;
-       }  
-    
+       }
+
    public String toString() {return "Task {id="+id+",title='"+title+"',status='"+state+", tags='"+tags+"', description='"+description+"'}";}
-    
- @XmlEnum(Integer.class)   
+
+ @XmlEnum(Integer.class)
  //Par défaut vers String (donc @XmlEnumValue inutile)
- //@XmlEnum(String.class)   
+ //@XmlEnum(String.class)
  public enum State {
-    @XmlEnumValue("1") OPENED, 
+    @XmlEnumValue("1") OPENED,
     @XmlEnumValue("0") CLOSED
  }
- 
- @XmlAccessorType(XmlAccessType.FIELD)    
+
+ @XmlAccessorType(XmlAccessType.FIELD)
  public static class Description {
-     @XmlValue 
+     @XmlValue
      private String content = "...";
      public String toString() {return content;}
  }
-    
+
 }
 ```
 
@@ -210,7 +203,7 @@ String xmlString="""
         <tag>fun</tag>
     </tags>
 </ns2:task>""";
-//Conversion d'n document XML 
+//Conversion d'n document XML
 jaxbContext.createUnmarshaller()
        .unmarshal(new StringReader(xmlString));
 ```
@@ -224,7 +217,7 @@ Dans le cas de JAX-RS, c'est le framework qui prend en charge la transformation 
 </dependency>
 ```
 
-JAXB Permet aussi de générer automatique le Schema XML à partir des classes Java. Il suffit d'écrire une sous-classe de `SchemaOutputResolver` pour indiquer où les résultat doit être produit. Ci dessous deux exemples pour obtenir une String et des fichiers. 
+JAXB Permet aussi de générer automatique le Schema XML à partir des classes Java. Il suffit d'écrire une sous-classe de `SchemaOutputResolver` pour indiquer où les résultat doit être produit. Ci dessous deux exemples pour obtenir une String et des fichiers.
 
 ```{java}
 //| output: false
@@ -238,7 +231,7 @@ import javax.xml.transform.stream.StreamResult;
 ```{java}
 //| vscode: {languageId: java}
 public class StringSchemaOutputResolver extends SchemaOutputResolver {
-    private StringWriter stringWriter = new StringWriter();    
+    private StringWriter stringWriter = new StringWriter();
 
     public Result createOutput(String namespaceURI, String suggestedFileName) throws IOException  {
         StreamResult result = new StreamResult(stringWriter);
@@ -253,7 +246,7 @@ public class StringSchemaOutputResolver extends SchemaOutputResolver {
 }
 
 
-public class FileSchemaOutputResolver extends SchemaOutputResolver {        
+public class FileSchemaOutputResolver extends SchemaOutputResolver {
     @Override
     public Result createOutput(String nameSpaceURI, String suggestedName) throws IOException {
         System.out.println(nameSpaceURI+" "+suggestedName);
@@ -275,7 +268,7 @@ render("```xml\n"+result+"\n```", "text/markdown");
 ```
 
 ## JSON
-Le standard officiel pour JSON est maintenant [JSON-B](http://json-b.net/) (Java API for JSON Binding). Cependant, des fonctionnalités importantes sont manquantes comme la gestion des types Polymorphes ou de certaines classes importantes en natif (comme les collections eclipses). Nous utiliserons donc une autre librairie : [Jackson](https://github.com/FasterXML/jackson) (cf. pom.xml). 
+Le standard officiel pour JSON est maintenant [JSON-B](http://json-b.net/) (Java API for JSON Binding). Cependant, des fonctionnalités importantes sont manquantes comme la gestion des types Polymorphes ou de certaines classes importantes en natif (comme les collections eclipses). Nous utiliserons donc une autre librairie : [Jackson](https://github.com/FasterXML/jackson) (cf. pom.xml).
 
 Pour l'utiliser, il suffit d'ajouter les dépendances suivantes :
 
@@ -296,7 +289,7 @@ Pour l'utiliser, il suffit d'ajouter les dépendances suivantes :
     <version>2.16.1</version>
     <type>pom</type>
 </dependency>
-     
+
 <!-- Optionnel ajoute le support des Date Java8 -->
 <dependency>
     <groupId>com.fasterxml.jackson.datatype</groupId>
@@ -305,9 +298,9 @@ Pour l'utiliser, il suffit d'ajouter les dépendances suivantes :
 </dependency>
 ```
 
-Le contrôle de la sérialisation/désérialisation se fait principalement par annotation des entités. Les méthodes de sérialisation/désérialisations sont alors générées automatiquement. Il est possible de créer manuellement ces méthodes pour un contrôle plus précis. 
+Le contrôle de la sérialisation/désérialisation se fait principalement par annotation des entités. Les méthodes de sérialisation/désérialisations sont alors générées automatiquement. Il est possible de créer manuellement ces méthodes pour un contrôle plus précis.
 
-Les principales annotations sont données dans le tableau ci dessous et illustrées dans l'exemple suivant. 
+Les principales annotations sont données dans le tableau ci dessous et illustrées dans l'exemple suivant.
 
 |annotation|Description|
 |---|---|
@@ -334,7 +327,7 @@ Pour les types polymorphes des annotations spécifiques pour les classes qui per
 import java.util.List;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import com.fasterxml.jackson.annotation.*;  
+import com.fasterxml.jackson.annotation.*;
 ```
 
 ```{java}
@@ -356,44 +349,44 @@ public class Task {
 
    @JsonProperty("status")
    private State state=State.OPENED;
-   
+
    @JsonIgnore
    private int age = -1;
-        
-   private List<String> tags; 
- 
+
+   private List<String> tags;
+
    @JsonView(View.Complete.class)
-   private Description description = new Description(""); 
-    
-   protected Task() {} 
+   private Description description = new Description("");
+
+   protected Task() {}
    public Task(long id, String title, State state, List<String> tags) {
        this.id=id; this.title=title; this.state=state; this.tags = tags;
-       }  
-    
+       }
+
    @JsonFormat(
       shape = JsonFormat.Shape.STRING,
       pattern = "yyyy-MM-dd@HH:mm:ss")
    public LocalDateTime creationDate =  LocalDateTime.now();
-    
+
    public String toString() {return "Task {id="+id+",title='"+title+"',status='"+state+", tags='"+tags+"', description='"+description+"'}";}
-    
+
  public enum State {
-    OPENED, 
+    OPENED,
     CLOSED
  }
- 
+
 //@JsonTypeInfo(include = JsonTypeInfo.As.WRAPPER_OBJECT, use = JsonTypeInfo.Id.NAME)
 @JsonTypeName("Description")
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 public static class Description {
-     @JsonValue 
+     @JsonValue
      private String content;
      public String toString() {return content;}
      public Description(String content) {
          this.content=content;
      }
  }
-    
+
 }
 ```
 
@@ -414,7 +407,7 @@ Task[] tasks = {new Task(1L, "First task", Task.State.OPENED, Arrays.asList("imp
             new Task(2L, "Second task", Task.State.OPENED, Arrays.asList("optionnal"))};
 
 ObjectMapper objectMapper = new ObjectMapper()
-    
+
     //Only needed because task doesn't have getters.
     .setVisibility(PropertyAccessor.FIELD, Visibility.ANY)
 
@@ -424,19 +417,19 @@ ObjectMapper objectMapper = new ObjectMapper()
     //Optionnal : pretty print the result.
     .enable(SerializationFeature.INDENT_OUTPUT)
 
-    //Register jackson modules like date 
+    //Register jackson modules like date
     .findAndRegisterModules();
 
     //.writerWithView(View.Minimal.class);
     //.writerWithView(View.Complete.class);
 
 
-String taskAsString = 
+String taskAsString =
     objectMapper
       //Choose or view (or none)
     //.writerWithView(View.Minimal.class)
       //.writerWithView(View.Complete.class)
-    //writes to a file  
+    //writes to a file
       //.writeValue(new File("task.json"), tasks)
     //or returns a String
       .writeValueAsString(tasks);
@@ -464,9 +457,9 @@ String jsonString="""
     "tags" : [ "spare-time", "fun"],
     "creationDate" : "2021-02-23@04:06:37"
   }
-}    
+}
 """;
-    
+
 objectMapper.readValue(jsonString, Task.class);
 ```
 
@@ -486,7 +479,7 @@ L'annotation `@JsonIdentityInfo` permet de définir la solution pour identifier 
 //Temporary User & Task class déclaration because forward declaration in JShell does not work with annotations
 public class User{};
 public class Task{};
-//END OF NOT NEED IN REAL JAVA    
+//END OF NOT NEED IN REAL JAVA
 ```
 
 ```{java}
@@ -499,15 +492,15 @@ public class Task{};
 @JsonTypeInfo(//use = JsonTypeInfo.Id.CLASS, //Use the class
               use = JsonTypeInfo.Id.NAME,  //or use the name
               //property = "@class",
-              include = JsonTypeInfo.As.PROPERTY            
+              include = JsonTypeInfo.As.PROPERTY
               )
 @JsonSubTypes({
         @JsonSubTypes.Type(value = User.class, name = "User"),
         @JsonSubTypes.Type(value = Task.class, name = "Task")
     })
 public class Data {
-    protected UUID uuid = UUID.randomUUID();   
-    public String toString() {return "User {uuid="+uuid+"'}";}    
+    protected UUID uuid = UUID.randomUUID();
+    public String toString() {return "User {uuid="+uuid+"'}";}
 }
 ```
 
@@ -516,15 +509,15 @@ public class Data {
 @JsonTypeName(value = "User")
 public class User extends Data {
     private String name;
-    
-    @JsonIdentityReference(alwaysAsId = true)    
+
+    @JsonIdentityReference(alwaysAsId = true)
     private List<Task> tasks = new ArrayList<>();
     public void addTask(Task task) {tasks.add(task);}
     public List<Task> getTasks() {return tasks;}
-    
+
     protected User() {};
     public User(String name) {this.name = name;}
-    public String toString() {return "User {uuid="+uuid+",name='"+name+"'}";}    
+    public String toString() {return "User {uuid="+uuid+",name='"+name+"'}";}
 }
 ```
 
@@ -533,13 +526,13 @@ public class User extends Data {
 @JsonTypeName(value = "Task")
 public class Task extends Data {
     private String title;
-    
-    @JsonIdentityReference(alwaysAsId = true)    
+
+    @JsonIdentityReference(alwaysAsId = true)
     private User owner;
-    
+
     protected Task() {};
     @JsonCreator
-    public Task(@JsonProperty("title") String title, @JsonProperty("owner") User owner) {        
+    public Task(@JsonProperty("title") String title, @JsonProperty("owner") User owner) {
         this.title = title; this.owner = owner;
         owner.addTask(this);
         //System.out.println("'Task Constructor Called: ' "+title+" "+owner+" "+owner.getTasks());
@@ -548,7 +541,7 @@ public class Task extends Data {
         this.owner = owner;
         owner.addTask(this);
     }
-    
+
     public String toString() {return "Task {uuid="+uuid+",title='"+title+"'}";}
 }
 ```
@@ -560,8 +553,8 @@ User user1 = new User("John");
 Task task1 = new Task("T1",user1);
 Task task2 = new Task("T2",user1);
 
-List<Data> dataList = Arrays.asList(user1, task1, task2); 
-Data[] dataArray = new Data[]{user1, task1, task2}; 
+List<Data> dataList = Arrays.asList(user1, task1, task2);
+Data[] dataArray = new Data[]{user1, task1, task2};
 
 ObjectMapper objectMapper = new ObjectMapper()
     .setVisibility(PropertyAccessor.FIELD, Visibility.ANY)
@@ -600,7 +593,7 @@ Data[] data2 = objectMapper.readValue("""
   "owner" : "487d6096-7608-11eb-9439-0242ac130002"
 } ]""", Data[].class);
 
-//We produce JSON from the generated Java objects.                                      
+//We produce JSON from the generated Java objects.
 String result = objectMapper.writeValueAsString(data2);
 ```
 
@@ -608,7 +601,7 @@ String result = objectMapper.writeValueAsString(data2);
 //| output: true
 //| echo: false
 //| vscode: {languageId: java}
-render("```json\n"+result+"\n```", "text/markdown");                               
+render("```json\n"+result+"\n```", "text/markdown");
 ```
 
 Pour aller plus loin, JSON n'est en fait pas un standard du Web et donc chaque format est "propriétaire". [JSON-LD](https://json-ld.org/) qui s'appuie sur JSON pour représenter des données sémantiques sur le Web est une meilleure solution. Pour être, complètement compatible avec l'approche HATEOS, Un vocabulaire spécifique pour les API RESGT construit au dessus de JSON-LD appelé [Hydra](http://www.hydra-cg.com/spec/latest/core/) est en cours de définition. LE site [schemas.org](https://schema.org/docs/schemas.html) propose de standardiser des schémas courants.

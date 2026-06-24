@@ -19,21 +19,12 @@ categories:
   - Autorisation
 provide_notes: true
 provide_slides: false
-jupyter: java-lts
-execute: 
+jupyter: java
+execute:
     echo: true
     output: true
     error: true
 ---
-
-:::: {layout="[ 0.5, -0.05, 0.45 ]"}
-::: {#first-column}
-{{< include ./quarto-utils/_tools_Git_Java.qmd >}}
-:::
-::: {#second-column}
-{{< include ./quarto-utils/_tools_Java_Java.qmd >}}
-:::
-::::
 
 ```{java}
 //| echo: false
@@ -53,7 +44,7 @@ gitpull.sh --provider github \
 PROVIDER="github"
 REPO="ebpro/notebook-java-rest-sample-jakartarestfull"
 BRANCH="develop"
-source get_src_dir.sh ${PROVIDER} ${REPO} 
+source get_src_dir.sh ${PROVIDER} ${REPO}
 cd ${SRC_DIR}
 ./mvnw --quiet verify
 ```
@@ -74,13 +65,13 @@ import fr.univtln.bruno.samples.jaxrs.server.BiblioServer;
 ```
 
 
-Pour assurer la sécurité d'une API REST, la première chose à faire est d'assurer la confidentialité. Pour cela, il faut utiliser HTTPS qui utilise TLS pour permettre de valider l'identité du serveur et pour garantir la confidentialité et l'intégrité des données échangées en utilisant des certificats. 
+Pour assurer la sécurité d'une API REST, la première chose à faire est d'assurer la confidentialité. Pour cela, il faut utiliser HTTPS qui utilise TLS pour permettre de valider l'identité du serveur et pour garantir la confidentialité et l'intégrité des données échangées en utilisant des certificats.
 
 Pour mettre cela en place, il est possible d'utiliser un "reverse proxy" (par exemple [nginx](https://docs.nginx.com/nginx/admin-guide/web-server/reverse-proxy/]) qui lui sera sécurisé et servira de facade, le serveur REST n'étant jamais accessible autrement.
 
 L'autre solution est de sécuriser les serveurs web (dans notre exemple Java, Grizzly). Pour cela, il faut idéalement se procurer des certificats pour le serveurs signés par une autorité reconnue. Nous utiliserons ici des certificats auto-signés dans un but de démonstration uniquement.
 
-Le certificat du serveur est habituellement généré avec openssl, ici nous utilisons maven (`keytool-maven-plugin`) pour le générer automatiquement s'il n'existe pas déjà dans le répertoire `/src/jaxrs/sample-jaxrs/src/main/resources/ssl/`. Le certificat est automatiquement ajouté à un keystore Java dans le même répertoire (cert.jks).  
+Le certificat du serveur est habituellement généré avec openssl, ici nous utilisons maven (`keytool-maven-plugin`) pour le générer automatiquement s'il n'existe pas déjà dans le répertoire `/src/jaxrs/sample-jaxrs/src/main/resources/ssl/`. Le certificat est automatiquement ajouté à un keystore Java dans le même répertoire (cert.jks).
 
 Le serveur Grizzly est en écoute avec HTTP sur le port 9998 et en HTTPS sur le port 4443.
 
@@ -114,7 +105,7 @@ HttpServer httpServer = BiblioServer.startServer();
 BiblioServer.addTLSandHTTP2(httpServer);
 ```
 
-Pour tester les requêtes sécurisée avec un certificat autosigné il faut d'abord le télécharger (ici avec la commande curl). 
+Pour tester les requêtes sécurisée avec un certificat autosigné il faut d'abord le télécharger (ici avec la commande curl).
 
 ```{java}
 //| vscode: {languageId: java}
@@ -122,7 +113,7 @@ Pour tester les requêtes sécurisée avec un certificat autosigné il faut d'ab
 echo quit | \
     openssl s_client -showcerts \
         -servername localhost \
-        -connect localhost:4443 >! /tmp/cacert.pem  
+        -connect localhost:4443 >! /tmp/cacert.pem
 ```
 
 
@@ -152,11 +143,11 @@ fr.univtln.bruno.samples.jaxrs.security.InMemoryLoginModule.USER_DATABASE.getUse
 ### Autorisation
 
 L'Autorisation est cruciale, elle peut s'appuyer un token qui est fourni par le système lors d'un login et a une durée de vie limitée.
-Ce token est envoyé avec chaque requête et le système lui attribue un ensemble de permission. 
+Ce token est envoyé avec chaque requête et le système lui attribue un ensemble de permission.
 
-Un autre approche est d'utiliser un token cryptographique qui contient ces informations et qui est signée par le serveur. 
+Un autre approche est d'utiliser un token cryptographique qui contient ces informations et qui est signée par le serveur.
 
-Par exemple avec les [JSON Web Token - JWT](https://jwt.io/) qui présente en détail le processus type. 
+Par exemple avec les [JSON Web Token - JWT](https://jwt.io/) qui présente en détail le processus type.
 
 Dans ces exemples, nous utiliserons la librairies Java  [JJWT](https://github.com/jwtk/jjwt).
 
@@ -265,7 +256,7 @@ TOKEN=$(curl -s --http2 \
 curl -s -i --http2 \
     --cacert /tmp/cacert.pem \
     -H "Authorization: Bearer ${TOKEN}" \
-    https://localhost:4443/mylibrary/setup/secured/admin       
+    https://localhost:4443/mylibrary/setup/secured/admin
 ```
 
 L'accès à une ressource qui demande d'être user ou admin est autorisé à un user.

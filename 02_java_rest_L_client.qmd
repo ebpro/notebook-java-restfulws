@@ -5,24 +5,17 @@ categories:
   - Lecture
   - Java
   - RESTful
-  - Web Services 
+  - Web Services
 provide_notes: true
 provide_slides: true
-jupyter: java-lts
+jupyter: java
 echo: true
 output: true
+
+execute:
+  error: true
 ---
 
-## Informations techniques 
-
-:::: {layout="[ 0.5, -0.05, 0.45 ]"}
-::: {#first-column}
-{{< include ./quarto-utils/_tools_Git_Java.qmd >}}
-:::
-::: {#second-column}
-{{< include ./quarto-utils/_tools_Java_Java.qmd >}}
-:::
-::::
 
 ## Exemples
 
@@ -45,7 +38,7 @@ gitpull.sh --provider github \
 PROVIDER="github"
 REPO="ebpro/sample-jaxrs"
 BRANCH="develop"
-source get_src_dir.sh ${PROVIDER} ${REPO} 
+source get_src_dir.sh ${PROVIDER} ${REPO}
 cd ${SRC_DIR}
 ./mvnw --quiet verify
 ```
@@ -113,7 +106,7 @@ Il existe plusieurs approches pour implémenter un client REST en Java, chacune 
 4. **Client Quarkus** : Simplifie le développement de microservices avec une approche déclarative
 :::
 
-### Tableau comparatif 
+### Tableau comparatif
 
 ::: {.content-visible when-profile="slides"}
 | Type | Points forts | Points faibles |
@@ -134,7 +127,7 @@ try {
     HttpURLConnection conn = (HttpURLConnection) url.openConnection();
     conn.setRequestMethod("GET");
     conn.setRequestProperty("Accept", "application/json");
-    
+
     // Vérification du code de réponse
     int responseCode = conn.getResponseCode();
     if (responseCode == HttpURLConnection.HTTP_OK) {
@@ -352,7 +345,7 @@ return null;
 
 ```{java}
 //| vscode: {languageId: java}
-%%shell 
+%%shell
 cd /home/jovyan/work/src/github/ebpro/sample-jaxrs
 mvn  -quiet -Dmain.class="fr.univtln.bruno.samples.jaxrs.client.BiblioClient" exec:java
 ```
@@ -377,7 +370,7 @@ La programmation réactive avec les clients REST permet de gérer efficacement l
 
 ### Quarkus REST Client
 
-Quarkus fournit un client REST déclaratif qui simplifie l'intégration avec les APIs REST. 
+Quarkus fournit un client REST déclaratif qui simplifie l'intégration avec les APIs REST.
 
 https://quarkus.io/guides/rest-client
 
