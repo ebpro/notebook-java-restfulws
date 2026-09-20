@@ -8,7 +8,7 @@ on:
 
 jobs:
   call-shared-render:
-    uses: ebpro/_quarto-utils/.github/workflows/render-quarto.yml@v1.0.8
+    uses: ebpro/_quarto-utils/.github/workflows/render-quarto.yml@v1.0.9
     secrets: inherit
     with:
       profiles: 'notes,slides'
