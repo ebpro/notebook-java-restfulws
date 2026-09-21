@@ -13,7 +13,7 @@ jobs:
     with:
       profiles: 'notes,slides'
       utils-repo: 'ebpro/_quarto-utils'
-      utils-ref: 'v1.1.1'
+      utils-ref: 'v1.1.2'
       output-path: '_output'
       deploy: true
 
